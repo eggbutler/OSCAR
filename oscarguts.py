@@ -63,18 +63,18 @@ def ripVAXTA(baseImagePath, saveSnippet = False):  # Take a path and return what
         # Try and clean up the image
         #  matrix of RGBA colors to search for, fuzziness, RGBA colors to change it to
         colorsToChange = [  
-            [(240, 240, 240, 255),  30, (255,  0,  0,255)],  # wall color
-            [(200, 200, 200, 255),  30, (255,  0,  0,255)],  # wall color
-            [(160, 160, 160, 255),  30, (255,  0,  0,255)],  # wall color
-            [(120, 120, 120, 255),  30, (255,  0,  0,255)],  # wall color
-            [( 80,  80,  80, 255),  30, (255,  0,  0,255)],  # wall color
-            [( 40,  40,  40, 255),  30, (255,  0,  0,255)],  # wall color
-            [(  5,   5,   5, 255),  30, (255,  0,  0,255)],  # wall color
-            [(236, 153,   0, 255),  70, (  0,  0,255,255)],  # orangeColor
-            [(0,   234, 234, 255),  70, (  0,  0,255,255)],  # aquaColor 
-            [(38,  170, 255, 255),  70, (  0,  0,255,255)],  # oceanColor
-            [(160, 232,  22, 255),  70, (  0,  0,255,255)],  # limeColor 
-            [(0,   230, 150, 255),  70, (  0,  0,255,255)],  # foamColor 
+            [(240, 240, 240, 255),  30, (255,255,255,255)],  # wall color
+            [(200, 200, 200, 255),  30, (255,255,255,255)],  # wall color
+            [(160, 160, 160, 255),  30, (255,255,255,255)],  # wall color
+            [(120, 120, 120, 255),  30, (255,255,255,255)],  # wall color
+            [( 80,  80,  80, 255),  30, (255,255,255,255)],  # wall color
+            [( 40,  40,  40, 255),  30, (255,255,255,255)],  # wall color
+            [(  5,   5,   5, 255),  30, (255,255,255,255)],  # wall color
+            [(236, 153,   0, 255),  70, (  0,  0,  0,255)],  # orangeColor
+            [(0,   234, 234, 255),  70, (  0,  0,  0,255)],  # aquaColor 
+            [(38,  170, 255, 255),  70, (  0,  0,  0,255)],  # oceanColor
+            [(160, 232,  22, 255),  70, (  0,  0,  0,255)],  # limeColor 
+            [(0,   230, 150, 255),  70, (  0,  0,  0,255)],  # foamColor 
         ]
         leSnippet = leSnippet.convert("RGBA")
         pixdata = leSnippet.load()
@@ -211,36 +211,130 @@ class oscarWorksheet():
         self.wks.append_row(addRow)
 
 
-class fileMeta():
+class oscarFileMeta():
+    """object including all the various file formats I need for running the app"""
     def __init__(
-            self,filePath="%user%/Videos/Captures",
+            self,
+            filePath="C:/Users/dim/Videos/Captures",
             # bigFileList=[["file.png","recorded"]],
-            currentIndex=0
+            pageSize=10,
+            fileIndex=0,
+            pageIndex=0,
     ) -> None:
         self.filePath = filePath
         # self.bigFileList = bigFileList
-        self.currentIndex = currentIndex
+        self.fileIndex = fileIndex
+        self.pageSize = pageSize
+        self.pageIndex = pageIndex
         self.leWorksheet = oscarWorksheet()
         self.updateStatus()
 
     def updateStatus(self):
-        # get the list of ignored and recorded files
-        # get a fresh list of files in a directory staring with overwatch and ends with .png
-        self.simpleFileList = [fN for fN in os.listdir(self.filePath) if fN[-4:] == ".png" and fN[:10] == "Overwatch "]
+        # get the list of ignored and recorded files from the spread sheet and line them up with the directory
+        # get a fresh list of files in a directory starting with overwatch and ends with .png
+        self.fileNameList = [fN for fN in os.listdir(self.filePath) if fN[-4:] == ".png" and fN[:10] == "Overwatch "]
         print("testing mark two")
 
-        self.bigFileList = []
+        self.filePathList = []
+        self.statusList = []
 
         igList, reList = self.leWorksheet.getStatus()
 
-        for file in self.simpleFileList:
-            if file in igList:
-                self.bigFileList.append([file,'ignored'])
-            elif file in reList:
-                self.bigFileList.append([file,'recorded'])
+        for file in self.fileNameList:
+            if self.filePath+'/'+file in igList:
+                self.filePathList.append(self.filePath+'/'+file)
+                self.statusList.append('ignored')
+            elif self.filePath+'/'+file in reList:
+                self.filePathList.append(self.filePath+'/'+file)
+                self.statusList.append('recorded')
             else:
-                self.bigFileList.append([file,'unstored'])
-        self.fileName = self.bigFileList[self.currentIndex]
-        self.fullFilePath = self.filePath + '/' + self.fileName
+                self.filePathList.append(self.filePath+'/'+file)
+                self.statusList.append('unstored')
 
-    
+        # make a list of files that are paginated
+        # qty of pages:
+        self.pageQTY = -(len(self.fileNameList) // -self.pageSize)
+        self.pagdFileList = [[] for _ in range(self.pageQTY)]
+        for idx, fileName in enumerate(self.fileNameList):
+            current_page = idx//self.pageSize
+            # print(f"fileList[{current_page}].append({fileName})")
+            self.pagdFileList[current_page].append([fileName,self.statusList[idx]])
+
+        self.updateData()
+
+    def updateData(self):
+        self.fileName = self.fileNameList[self.fileIndex]
+        self.fullFilePath = self.filePathList[self.fileIndex]
+
+    # def updateFileIndex(self,leFileIndex):
+    #     self.fileIndex = leFileIndex
+    #     self.updateData()
+
+    # def updatePageIndex(self,lePageIndex):
+    #     self.pageIndex = lePageIndex
+    #     self.updateStatus()
+
+    def dumpData(self):
+        print('self.fileName:')
+        pp(self.fileName)
+        print('self.filePath')
+        pp(self.filePath)
+        print('self.fileIndex')
+        pp(self.fileIndex)
+        print('self.pageQTY')
+        pp(self.pageQTY)
+        print('self.pageIndex')
+        pp(self.pageIndex)
+        print('self.filePathList')
+        pp(self.filePathList)
+        print('self.statusList')
+        pp(self.statusList)
+        print('self.fileNameList')
+        pp(self.fileNameList)
+        print('self.pagdFileList')
+        pp(self.pagdFileList)
+        # print('')
+        # pp()
+        # print('')
+        # pp()
+        # print('')
+        # pp()
+
+
+if __name__ == '__main__':
+    test = fileMeta()
+    test.dumpData()
+
+    # testing mark two
+    # self.fileName
+    # 'Overwatch 3_29_2024 2_30_03 PM.png'
+    # self.filePath
+    # 'C:/Users/dim/Videos/Captures'
+    # self.currentIndex
+    # 0
+    # self.filePathList
+    # ['C:/Users/dim/Videos/Captures/Overwatch 3_29_2024 2_30_03 PM.png',
+    # 'C:/Users/dim/Videos/Captures/Overwatch 3_29_2024 2_44_16 PM.png',
+    # '...',
+    # 'C:/Users/dim/Videos/Captures/Overwatch 8_3_2023 7_13_19 PM.png',
+    # 'C:/Users/dim/Videos/Captures/Overwatch 8_8_2023 10_12_22 AM.png']
+    # self.statusList
+    # ['recorded',
+    # 'recorded',
+    # '...',
+    # 'recorded',
+    # 'recorded']
+    # self.fileNameList
+    # ['Overwatch 3_29_2024 2_30_03 PM.png',
+    # 'Overwatch 3_29_2024 2_44_16 PM.png',
+    # '...',
+    # 'Overwatch 8_3_2023 7_13_19 PM.png',
+    # 'Overwatch 8_8_2023 10_12_22 AM.png']
+    # self.numberPages
+    # 5
+    # self.pagdFileList
+    # [[['Overwatch 3_29_2024 2_30_03 PM.png', 'recorded'],
+    # ['Overwatch 3_29_2024 2_44_16 PM.png', 'recorded'],
+    # '...',
+    # ['Overwatch 8_3_2023 7_13_19 PM.png', 'recorded'],
+    # ['Overwatch 8_8_2023 10_12_22 AM.png', 'recorded']]]

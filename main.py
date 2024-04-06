@@ -11,7 +11,7 @@ print("""
 """)
 
 import os, sys
-os.chdir('C:\\Users\\dim\\Dropbox\\projects\\Overwatch Scrape\\v0')
+os.chdir('C:\\Users\\dim\\Documents\\Github\\OSCAR')
 from PyQt6.QtWidgets import QApplication
 #gui
 from oscargui import reviewData, FileButtonApp

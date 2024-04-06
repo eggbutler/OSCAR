@@ -9,7 +9,8 @@ from PyQt6.QtCore import Qt
 from pprint import pprint as pp
 import datetime
 os.chdir('C:\\Users\\dim\\Dropbox\\projects\\Overwatch Scrape\\v0')
-from oscarguts import ripVAXTA, paginateList, oscarWorksheet, oscarBlue, oscarAqua, oscarCream, oscarRed, oscarYellow, bottomUnderline, oscarDGray
+from oscarguts import ripVAXTA, paginateList, oscarWorksheet, oscarFileMeta
+from oscarguts import oscarBlue, oscarAqua, oscarCream, oscarRed, oscarYellow, bottomUnderline, oscarDGray
 
 
 
@@ -197,7 +198,6 @@ class FileButtonApp(QMainWindow):
 
         self.setWindowTitle("List of 'Overwatch' images")
         self.setGeometry(100, 100, 800, 200)
-
         self.initUI()
 
         # create label
@@ -247,12 +247,22 @@ class FileButtonApp(QMainWindow):
         self.current_page = 0
         # self.items_per_page = 5  # Adjust as needed
         # DDC add:
-        self.initializeSettings()
-
+        self.initializeSettings()  #get folder path and page size
+        # print("self.items_per_page",self.items_per_page)
+        # print("self.folder_path",self.folder_path)
+        
         self.leWorksheet = oscarWorksheet()
 
-        # Load initial files (you can set this based on user input)
         self.load_files()
+
+        # files object that holds the files data
+        self.fls = oscarFileMeta(filePath=self.folder_path,pageSize=self.items_per_page)
+        # self.fls.dumpData()
+
+
+        # Load initial files (you can set this based on user input)
+        # self.load_files()
+        self.display_files()
 
     def initUI(self):  # add menu items
 
@@ -286,7 +296,7 @@ class FileButtonApp(QMainWindow):
         # self.setWindowTitle('Simple menu')
         self.show()
 
-    def updateFolder (self):  # update monitored folder
+    def updateFolder (self):  # update monitored folder setting menu
         print("updating path")
         self.folder_path = QFileDialog.getExistingDirectory(self, "Select a directory")
         # put settings into dictionary
@@ -295,7 +305,7 @@ class FileButtonApp(QMainWindow):
         with open ('conf.pickle','wb') as p: pickle.dump(settings,p)
         self.load_files()
 
-    def editPage (self):  # update page size
+    def editPage (self):  # update page size settings menu
         print('updating page size')
         # Display an input dialog
         text, ok = QInputDialog.getText(self, "Enter Text", "Please enter a number (4-50):")
@@ -359,7 +369,7 @@ class FileButtonApp(QMainWindow):
         # print("self.fileList",self.fileList)
         self.display_files()
 
-    def initializeSettings(self):  # load conf pickle or set one up
+    def initializeSettings(self):  # load config pickle to get folder path and page size
         # Get the directory path using QFileDialog
         # folder_path = QFileDialog.getExistingDirectory(self, "Select a directory")
         if os.path.exists('conf.pickle'): 
@@ -391,6 +401,7 @@ class FileButtonApp(QMainWindow):
             with open ('conf.pickle','wb') as p: pickle.dump(settings,p)
 
     def display_files(self):  # setup and add file buttons and navigation buttons
+
         # Add pagination buttons
         self.navigationLayout.addWidget(self.prevButton)
         self.navigationLayout.addWidget(self.nextButton)
