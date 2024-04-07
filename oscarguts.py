@@ -6,6 +6,7 @@ import datetime
 import cv2
 import os
 import gspread
+import pickle
 
 
 oscarBlue    = "background-color: #001524; color:#FFF;"  # darkblue  Too dark
@@ -289,6 +290,26 @@ class oscarFileMeta():
         pp(self.pagdList)
         # print('')
         # pp()
+
+
+class analysisCache:
+    """obect to hold the cache data:"""
+    """{"filename and path':[val1, ... val6]}"""
+    def __init__(self) -> None:
+        # get a pickle
+        if os.path.exists('dataCache.pickle'):
+            print('found the cache')
+            with open ('dataCache.pickle', 'rb') as p:
+                self.dataCache = pickle.load(p)
+            # return self.dataCache
+        else:
+            print('no data cache found; starting a new one')
+            self.dataCache = {}
+            # return self.datacache
+    def backupCache(self):
+        print('cache money yo')
+        # self.dataCache = newCache
+        with open ('dataCache.pickle','wb') as p: pickle.dump(self.dataCache,p)
 
 
 

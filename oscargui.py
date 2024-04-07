@@ -8,8 +8,8 @@ from PyQt6.QtCore import Qt
 # import numpy as np
 from pprint import pprint as pp
 import datetime
-os.chdir('C:\\Users\\dim\\Documents\\GitHub\\OSCAR')
-from oscarguts import ripVAXTA, paginateList, oscarWorksheet, oscarFileMeta
+# os.chdir('C:\\Users\\dim\\Documents\\GitHub\\OSCAR')
+from oscarguts import ripVAXTA, oscarWorksheet, oscarFileMeta, analysisCache
 from oscarguts import oscarBlue, oscarAqua, oscarCream, oscarRed, oscarYellow, bottomUnderline, oscarDGray
 
 
@@ -209,6 +209,14 @@ class FileButtonApp(QMainWindow):
         self.fls = oscarFileMeta(path=folderPath,pageSize=pageSize)
         # self.fls.dumpData()
 
+        # populate the cache
+        self.dtCache = analysisCache()
+        for idx, leFile in enumerate(self.fls.pathList):
+            if self.fls.statusList[idx] == "unrecorded":
+                self.dtCache[leFile] = ripVAXTA(self.fls.namePath)
+        self.dtCache.backupCache()
+
+
         # Add pagination buttons
         self.navigationLayout.addWidget(self.prevButton)
         self.navigationLayout.addWidget(self.nextButton)
@@ -301,7 +309,7 @@ class FileButtonApp(QMainWindow):
                 with open ('conf.pickle','wb') as p: pickle.dump(settings,p)
         else:
             print('missing pickle')
-            self.folder_path = QFileDialog.getExistingDirectory(self, "Select a directory")
+            folder_path = QFileDialog.getExistingDirectory(self, "Select a directory")
             items_per_page = 10
             # put settings into dictionary
             settings = {'folder_path' : folder_path, 'items_per_page' : items_per_page,}
@@ -355,13 +363,28 @@ class FileButtonApp(QMainWindow):
 
     def analyseImage(self, imageFileName):  # take an image path and return it's statistics
         # should do something here with the image:
+        self.fls.index = self.fls.nameList.index(imageFileName)
+        self.fls.updateData()
+        # check if file is in the dtcache
+        if imageFileName in list(self.dtCache.dataCache.values()):
+            response = self.dtCache.dataCache[imageFileName]
+            self.new_window = reviewData(self, response, self.fls)
+            self.new_window.show()
+        else:
+            # update filesMeta based on the image file name
+            response = ripVAXTA(self.fls.namePath)
+            self.dtCache.dataCache[self.fls.namePath] = response
+            self.dtCache.backupCache()
+            self.new_window = reviewData(self, response, self.fls)
+            self.new_window.show()
+
+    def analyseImageData(self, imageFileName):  # take an image path and return it's statistics
+        # should do something here with the image:
         # update filesMeta based on the image file name
         self.fls.index = self.fls.nameList.index(imageFileName)
         self.fls.updateData()
         response = ripVAXTA(self.fls.namePath)
-
-        self.new_window = reviewData(self, response, self.fls)
-        self.new_window.show()
+        return response
 
 
 
