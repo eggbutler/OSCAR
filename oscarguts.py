@@ -23,7 +23,6 @@ def paginateList(listofdata, itemsQTY=5):  # take a list and cut it up into list
     fileList = [[] for _ in range(numberPages)]
     for idx, fileName in enumerate(listofdata):
         current_page = idx//itemsQTY
-        # print(f"fileList[{current_page}].append({fileName})")
         fileList[current_page].append(fileName)
     return fileList
 
@@ -32,7 +31,6 @@ def ripVAXTA(baseImagePath, saveSnippet = False):  # Take a path and return what
     # empty list for output:
     textList = []
     # look for hero name:
-    # print(findTheHeroName(baseImagePath))
     textList.extend([findTheHeroName(baseImagePath)])
     baseImage = Image.open(baseImagePath)
     # check if the image is windowed:
@@ -200,12 +198,7 @@ class oscarWorksheet():
                 recordList.append(fN)
         return(ignoreList,recordList)
     
-    # def writeRow(self, addRow):  # append a row
-    #     # append a row to the page
-    #     self.wks.append_row(addRow, value_input_option='USER_ENTERED')
-
     def writeTest(self):  # write todays date and time to the sheet
-        # stringNow = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
         stringNow = datetime.datetime.now().strftime(f'%Y-%m-%d %H:%M')
         addRow = [f'fake{stringNow}.png',stringNow] + [None]*7 + ['ignored']
         self.wks.append_row(addRow)
@@ -216,7 +209,6 @@ class oscarFileMeta():
     def __init__(
             self,
             path="C:/Users/dim/Videos/Captures",
-            # bigFileList=[["file.png","recorded"]],
             pageSize=10,
             index=0,
             pageIndex=0,
