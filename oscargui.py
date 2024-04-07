@@ -8,7 +8,7 @@ from PyQt6.QtCore import Qt
 # import numpy as np
 from pprint import pprint as pp
 import datetime
-os.chdir('C:\\Users\\dim\\Dropbox\\projects\\Overwatch Scrape\\v0')
+os.chdir('C:\\Users\\dim\\Documents\\GitHub\\OSCAR')
 from oscarguts import ripVAXTA, paginateList, oscarWorksheet, oscarFileMeta
 from oscarguts import oscarBlue, oscarAqua, oscarCream, oscarRed, oscarYellow, bottomUnderline, oscarDGray
 
@@ -110,7 +110,7 @@ class reviewData(QWidget):
             value = input_field.text()
             print(f"{label} {value}")
 
-    def sendData(self):
+    def sendData(self):  # sends data from the form to the VAXTA sheet
         # get the date time from the file
         leTimeStamp = os.path.getmtime(self.fls.namePath)
         # make the timestamp human readable
@@ -132,7 +132,7 @@ class reviewData(QWidget):
         self.parent_window.display_files()
         self.close()
 
-    def ignoreFile(self):
+    def ignoreFile(self):  # sends the file name to the VAXTA sheet so this file path is ignored
         rowAdd = [self.fls.namePath] + [""]*8 + ["ignored"]
         existingFiles = self.leWorksheet.wks.col_values(1)[1:]
         if self.fls.namePath in existingFiles:  # filename
@@ -149,6 +149,8 @@ class reviewData(QWidget):
 class FileButtonApp(QMainWindow):
     def __init__(self):
         super().__init__()
+
+        self.setWindowIcon(QIcon('icons/oscarAngry.ico'))
 
         self.setWindowTitle("List of 'Overwatch' images")
         self.setGeometry(100, 100, 800, 200)
@@ -200,12 +202,20 @@ class FileButtonApp(QMainWindow):
         # object that sends stuff out to the VAXTA Google Spreadsheet
         self.leWorksheet = oscarWorksheet()
 
-        # look for a pickle to get app settings
+        # look for a pickle to get app settings                                                               
         folderPath, pageSize = self.initializeSettings()  #get folder path and page size
 
         # files object that holds the files data
         self.fls = oscarFileMeta(path=folderPath,pageSize=pageSize)
-        self.fls.dumpData()
+        # self.fls.dumpData()
+
+        # Add pagination buttons
+        self.navigationLayout.addWidget(self.prevButton)
+        self.navigationLayout.addWidget(self.nextButton)
+
+        self.pageFeedback = QLabel("Page _ of _")
+        centralLayout.addWidget(self.pageFeedback)
+
         # Display initial files as buttons
         self.display_files()
 
@@ -254,13 +264,12 @@ class FileButtonApp(QMainWindow):
         # Display an input dialog
         text, ok = QInputDialog.getText(self, "Enter Text", "Please enter a number (4-50):")
         if ok and text:
-            print(f"User entered: {text}")
             try:
                 if 3 < int(text) < 50:
-                    print('number good to go')
                     self.fls.pageSize = int(text)
-                    settings = {'folder_path' : self.folder_path, 'items_per_page' : self.fls.pageSize,}
-                    with open ('conf.pickle','wb') as p: pickle.dump(settings,p)
+                    settings = {'folder_path' : self.fls.path, 'items_per_page' : self.fls.pageSize,}
+                    with open ('conf.pickle','wb') as p: 
+                        pickle.dump(settings,p)
                     self.fls.pageIndex = 0
                     self.fls.updateStatus()
                     self.display_files()
@@ -302,9 +311,6 @@ class FileButtonApp(QMainWindow):
 
     def display_files(self):  # setup and add file buttons and navigation buttons
 
-        # Add pagination buttons
-        self.navigationLayout.addWidget(self.prevButton)
-        self.navigationLayout.addWidget(self.nextButton)
         # Clear existing buttons
         for i in reversed(range(self.buttonLayout.count())):
             widget = self.buttonLayout.itemAt(i).widget()
@@ -331,6 +337,7 @@ class FileButtonApp(QMainWindow):
         # enable/disable navigation buttons
         self.prevButton.setEnabled(self.fls.pageIndex > 0)
         self.nextButton.setEnabled(self.fls.pageIndex < self.fls.pageQTY-1)
+        self.pageFeedback.setText(f"Page {self.fls.pageIndex+1} of {self.fls.pageQTY}")
 
     def show_previous_page(self):  # previous page of files and refresh buttons
         self.fls.pageIndex = max(self.fls.pageIndex - 1, 0)

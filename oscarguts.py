@@ -225,7 +225,6 @@ class oscarFileMeta():
         # get the list of ignored and recorded files from the spread sheet and line them up with the directory
         # get a fresh list of files in a directory starting with overwatch and ends with .png
         self.nameList = [fN for fN in os.listdir(self.path) if fN[-4:] == ".png" and fN[:10] == "Overwatch "]
-        print("testing mark two")
 
         self.pathList = []
         self.statusList = []

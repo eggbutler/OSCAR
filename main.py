@@ -10,15 +10,10 @@ print("""
             Overwatch Screen Capture Analysis Recorder
 """)
 
-import os, sys
-os.chdir('C:\\Users\\dim\\Documents\\Github\\OSCAR')
+import sys
 from PyQt6.QtWidgets import QApplication
 #gui
-from oscargui import reviewData, FileButtonApp
-
-
-#start the gui:
-# os.getcwd()
+from oscargui import FileButtonApp
 
 
 if __name__ == "__main__":
