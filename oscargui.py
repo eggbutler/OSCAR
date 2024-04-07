@@ -15,21 +15,26 @@ from oscarguts import oscarBlue, oscarAqua, oscarCream, oscarRed, oscarYellow, b
 
 
 class reviewData(QWidget):
-    def __init__(self, parent_window, response, filePath, bigFileList, currentIndex):  # initialize the words read from the image for human review
+    def __init__(self, parent_window, response, filesMeta):  # initialize the words read from the image for human review
         super().__init__()
         layout = QVBoxLayout()
 
         self.parent_window = parent_window
-        self.filePath = filePath
-        self.bigFileList = bigFileList
-        self.currentIndex = currentIndex
+        response = response  + ['']
+        self.fls = filesMeta  # files meta object
+        print('starting a new daaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaay')
+        self.fls.updateData
+        print(self.fls.name)
+        print(self.fls.nameList)
+        # self.filePath = filePath
+        # self.bigFileList = bigFileList
+        # self.currentIndex = currentIndex
         # print("self.currentIndex in rd",self.currentIndex)
         # print('len of big file:', len(self.bigFileList))
 
         # print('bigfilelistspot two',self.bigFileList[self.currentIndex][1]) # = ignored or recorded
         # get the responses from the pytesseract
         # add a blank text spot for the upcoming comment field
-        response = response  + ['']
 
         # # Create five QLineEdit widgets
         # self.text_inputs = []
@@ -39,14 +44,14 @@ class reviewData(QWidget):
         #     layout.addWidget(input_field)
 
         # Add a label for context
-        self.label = QLabel(f'please check values for\n{self.bigFileList[self.currentIndex][0].split("/")[-1]}')
-        if self.bigFileList[self.currentIndex][1] == 'ignored':
+        self.label = QLabel(f'please check values for\n{self.fls.name}')
+        if self.fls.status == 'ignored':
             self.label2 = QLabel('This file was previously ignored')
-        elif self.bigFileList[self.currentIndex][1] == 'recorded':
+        elif self.fls.status == 'recorded':
             self.label2 = QLabel('This file was already recorded!')
             self.label.setStyleSheet(oscarAqua)
             self.label2.setStyleSheet(oscarAqua)
-        elif self.bigFileList[self.currentIndex][1] == 'unstored':
+        elif self.fls.status == 'unstored':
             self.label2 = QLabel("This screen shot isn't in the spreadsheet!")
             self.label.setStyleSheet(oscarYellow)
             self.label2.setStyleSheet(oscarYellow)
@@ -94,8 +99,8 @@ class reviewData(QWidget):
         nav_layout.addWidget(nextButton)
 
         # enable/disable navigation buttons
-        prevButton.setEnabled(self.currentIndex > 0)
-        nextButton.setEnabled(self.currentIndex < len(self.bigFileList)-1)
+        prevButton.setEnabled(self.fls.index > 0)
+        nextButton.setEnabled(self.fls.index < len(self.fls.nameList)-1)
 
         self.leWorksheet = oscarWorksheet()
 
@@ -105,39 +110,50 @@ class reviewData(QWidget):
 
     def show_prev_file(self):  # find previous file in the index and look up it's data.
         # leStats = ["240","32","20","39%","20%"]
-        self.currentIndex = max(0,self.currentIndex-1)
+        print('index old',self.fls.index)
+        print('name old',self.fls.name)
+        # self.currentIndex = max(0,self.fls.index-1)
+        self.fls.index = max(0,self.fls.index-1)
+        self.fls.updateData()
+        print('index new',self.fls.index)
+        print('name new',self.fls.name)
         # fileNamePath = self.filePath + '/' + self.bigFileList[self.currentIndex]
         # print(f'new target {self.bigFileList[self.currentIndex][0]}')
         # leFilePath = self.filePath + '/' + self.bigFileList[self.currentIndex][0]
-        leFilePath = self.bigFileList[self.currentIndex][0]
-        leStats = ripVAXTA(leFilePath)
+        # leFilePath = self.bigFileList[self.currentIndex][0]
+        # leFilePath = self.bigFileList[self.currentIndex][0]
+        leStats = ripVAXTA(self.fls.namePath)
         # print("self.bigFileList", self.bigFileList)
         # print("len self.bigFileList",len(self.bigFileList))
         # print("self.currentIndex", self.currentIndex)
         # self.new_window = reviewData()
         # print("self.currentIndex in rd",self.currentIndex)
         # print('len of big file:', len(self.bigFileList))
-        self.new_window = reviewData(self.parent_window, leStats, self.filePath, self.bigFileList, self.currentIndex)
+        self.new_window = reviewData(self.parent_window, leStats, self.fls)
         self.new_window.show()
         self.close()
         # QCoreApplication.instance().quit
 
     def show_next_file(self):  # find next file in the index and look up it's data.
         # leStats = ["240","32","20","39%","20%"]
-        self.currentIndex = min(len(self.bigFileList),self.currentIndex+1)
+        # self.currentIndex = min(len(self.bigFileList),self.currentIndex+1)
+        print('index old',self.fls.index)
+        self.fls.index = min(len(self.fls.nameList),self.fls.index+1)
+        self.fls.updateData()
+        print('index new',self.fls.index)
         # fileNamePath = self.filePath + '/' + self.bigFileList[self.currentIndex]
         # print(f'new target {self.bigFileList[self.currentIndex][0]}')
         # leFilePath = self.filePath + '/' + self.bigFileList[self.currentIndex][0]
-        leFilePath = self.bigFileList[self.currentIndex][0]
+        # leFilePath = self.bigFileList[self.currentIndex][0]
         # print('leFilePath',leFilePath)
-        leStats = ripVAXTA(leFilePath)
+        leStats = ripVAXTA(self.fls.namePath)
         # print("self.bigFileList", self.bigFileList)
         # print("len self.bigFileList",len(self.bigFileList))
         # print("self.currentIndex", self.currentIndex)
         # self.new_window = reviewData()
         # print("self.currentIndex in rd",self.currentIndex)
         # print('len of big file:', len(self.bigFileList))
-        self.new_window = reviewData(self.parent_window, leStats, self.filePath, self.bigFileList, self.currentIndex)
+        self.new_window = reviewData(self.parent_window, leStats, self.fls)
         self.new_window.show()
         self.close()
         # QCoreApplication.instance().quit
@@ -150,12 +166,13 @@ class reviewData(QWidget):
     def sendData(self):
         # get the date time from the file
         # leFullFilePath = os.path.join(self.filePath,self.bigFileList[self.currentIndex][0])
-        leTimeStamp = os.path.getmtime(self.bigFileList[self.currentIndex][0])
+        # leTimeStamp = os.path.getmtime(self.bigFileList[self.currentIndex][0])
+        leTimeStamp = os.path.getmtime(self.fls.namePath)
         # make the timestamp human readable
         humanTime = datetime.datetime.fromtimestamp(leTimeStamp).strftime(f"%Y-%m-%d %H:%M:%S")
         #  add row containing [filename,datetime,thefields values, ..., "recorded" ]
         rowAdd = [
-            self.bigFileList[self.currentIndex][0], humanTime
+            self.fls.namePath, humanTime
         ] + [
             input_field.text() for input_field in self.input_fields
         ] + ['recorded']
@@ -165,8 +182,8 @@ class reviewData(QWidget):
         # Does the file already exist in the spreadsheet column A?
         existingFiles = self.leWorksheet.wks.col_values(1)[1:]
         # print('existingFiles',existingFiles)
-        if self.bigFileList[self.currentIndex][0] in existingFiles:  # filename
-            rowToReplace = existingFiles.index(self.bigFileList[self.currentIndex][0]) + 2
+        if self.fls.namePath in existingFiles:  # filename
+            rowToReplace = existingFiles.index(self.fls.namePath) + 2
             # print("rowToReplace",rowToReplace)
             # update: which row, what to update with, stuff to make the date work 
             self.leWorksheet.wks.update(f"A{rowToReplace}",[rowAdd], value_input_option='USER_ENTERED')
@@ -176,12 +193,12 @@ class reviewData(QWidget):
         self.close()
 
     def ignoreFile(self):
-        print('ignore',[self.bigFileList[self.currentIndex][0]])
-        rowAdd = [self.bigFileList[self.currentIndex][0]] + [""]*8 + ["ignored"]
+        print('ignore',[self.fls.namePath])
+        rowAdd = [self.fls.namePath] + [""]*8 + ["ignored"]
         existingFiles = self.leWorksheet.wks.col_values(1)[1:]
         # myWorksheet = oscarWorksheet()
-        if self.bigFileList[self.currentIndex][0] in existingFiles:  # filename
-            rowToReplace = existingFiles.index(self.bigFileList[self.currentIndex][0]) + 2
+        if self.fls.namePath in existingFiles:  # filename
+            rowToReplace = existingFiles.index(self.fls.namePath) + 2
             # print("rowToReplace",rowToReplace)
             # update: which row, what to update with, stuff to make the date work 
             self.leWorksheet.wks.update(f"A{rowToReplace}",[rowAdd], value_input_option='USER_ENTERED')
@@ -246,20 +263,18 @@ class FileButtonApp(QMainWindow):
         self.files = []  # List of file paths
         self.current_page = 0
         # self.items_per_page = 5  # Adjust as needed
+
         # DDC add:
         self.initializeSettings()  #get folder path and page size
         # print("self.items_per_page",self.items_per_page)
         # print("self.folder_path",self.folder_path)
-        
+
+        # object that sends stuff out to the VAXTA Google Spreadsheet
         self.leWorksheet = oscarWorksheet()
 
-        self.load_files()
-
         # files object that holds the files data
-        self.fls = oscarFileMeta(filePath=self.folder_path,pageSize=self.items_per_page)
-        # self.fls.dumpData()
-
-
+        self.fls = oscarFileMeta(path=self.folder_path,pageSize=self.items_per_page)
+        self.fls.dumpData()
         # Load initial files (you can set this based on user input)
         # self.load_files()
         self.display_files()
@@ -367,7 +382,7 @@ class FileButtonApp(QMainWindow):
 
         # Display files for the current page
         # print("self.fileList",self.fileList)
-        self.display_files()
+        # self.display_files()
 
     def initializeSettings(self):  # load config pickle to get folder path and page size
         # Get the directory path using QFileDialog
@@ -424,49 +439,56 @@ class FileButtonApp(QMainWindow):
         #     if file in igList:
         #         buttonFileStatus.append[file,'ignored']
 
+        # Get range and span of the current page amongst the full list:
+        thisPage = self.fls.pagdList[self.fls.pageIndex]
+        print('table of page index?\n',self.fls.pagdList[self.fls.pageIndex])
+
         # Create buttons for files in the current page
-        for idx in range(len(self.files)):
-            file_name = self.files[idx][0]
-            file_status = self.files[idx][1]
-            button = QPushButton(file_name.split("/")[-1], self)
-            button
+        for leName, leStatus in self.fls.pagdList[self.fls.pageIndex]:
+            # file_name = self.files[idx][0]
+            # file_status = self.files[idx][1]
+            button = QPushButton(leName.split("/")[-1], self)
             # give it action
-            button.clicked.connect(lambda _, fName=file_name: self.analyseImage(fName))
+            button.clicked.connect(lambda _, fName=leName: self.analyseImage(fName))
             #style?
-            if file_status == 'ignored':
+            if leStatus == 'ignored':
                 # print(f"{file_name} getting ignored")
                 button.setStyleSheet(oscarDGray) # cream
                 # button.toolTip('Ignored')
-            elif file_status == 'recorded':
+            elif leStatus == 'recorded':
                 # print(f"{file_name} was recorded")
                 button.setStyleSheet(oscarAqua) # aqua
                 # button.toolTip('Recorded')
-            elif file_status == 'unstored':
+            elif leStatus == 'unstored':
                 # print(f"{file_name} was unstored")
                 button.setStyleSheet(oscarYellow) # lightyellow arylide
                 # button.toolTip('Unsaved')
             self.buttonLayout.addWidget(button)
 
         # enable/disable navigation buttons
-        self.prevButton.setEnabled(self.current_page > 0)
-        self.nextButton.setEnabled(self.current_page < self.numberPages-1)
+        self.prevButton.setEnabled(self.fls.pageIndex > 0)
+        self.nextButton.setEnabled(self.fls.pageIndex < self.fls.pageQTY-1)
 
     def show_previous_page(self):  # previous page of files and refresh buttons
         # print(self.current_page)
         # print(self.fileList)
-        self.current_page = max(self.current_page - 1, 0)
+        # self.current_page = max(self.current_page - 1, 0)
+        self.fls.pageIndex = max(self.fls.pageIndex - 1, 0)
+        self.fls.updateData
         # print(self.current_page)
-        self.files = self.fileList[self.current_page]
+        # self.files = self.fileList[self.current_page]
         # print("self.files",self.files)
         self.display_files()
 
     def show_next_page(self):  # next page of files
         # total_pages = (len(self.files) + self.items_per_page - 1) // self.items_per_page
-        self.current_page = min(self.current_page + 1, self.numberPages - 1)
+        # self.current_page = min(self.current_page + 1, self.numberPages - 1)
+        self.fls.pageIndex = min(self.fls.pageIndex + 1, self.fls.pageQTY - 1)
+        self.fls.updateData
         # print(self.files)
         # print(self.fileList)
         # print(self.current_page)
-        self.files = self.fileList[self.current_page]
+        # self.files = self.fileList[self.current_page]
         # print(self.current_page)
         # print(self.files)
         self.display_files()
@@ -477,9 +499,9 @@ class FileButtonApp(QMainWindow):
 
     def analyseImage(self, imageFileName):  # take an image path and return it's statistics
         # should do something here with the image:
-        fullPath = imageFileName
+        # fullPath = imageFileName
         # fullPath = self.folder_path + "/" + imageFileName
-        print(f"do read this image: {self.folder_path}/{imageFileName}")
+        # print(f"do read this image: {self.folder_path}/{imageFileName}")
         # get "Timer:", "Kills:", "KillsperMin:", "accuracy:", "crit accuracy:"
         # response = {
         #     "Timer" : "240",
@@ -489,15 +511,23 @@ class FileButtonApp(QMainWindow):
         #     "critAccuracy" : "20%",
         # }
         # response = ["240","32","20","39%","20%"]
-        response = ripVAXTA(fullPath)
+        # rowToReplace = existingFiles.index(self.fls.namePath) + 2
+        # update filesMeta
+        self.fls.index = self.fls.nameList.index(imageFileName)
+        self.fls.updateData()
+        response = ripVAXTA(self.fls.namePath)
         print('try this')
-        fileNameList = [x[0] for x in self.bigFileList]
-        leIndex = fileNameList.index(imageFileName)
+        # fileNameList = [x[0] for x in self.bigFileList]  
+        # leIndex = fileNameList.index(imageFileName)
+        # leIndex = self.fls.pathList.index(imageFileName)
+
         print('this???? try this`')
         # print(leIndex)
-        print("length of big file list",len(self.bigFileList))
-        self.new_window = reviewData(self, response, self.folder_path, self.bigFileList, leIndex)
+        print("length of big file list",len(self.fls.nameList))
+
+        self.new_window = reviewData(self, response, self.fls)
         self.new_window.show()
+        print('you beat this level')
 
 
 

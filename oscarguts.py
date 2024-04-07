@@ -215,15 +215,15 @@ class oscarFileMeta():
     """object including all the various file formats I need for running the app"""
     def __init__(
             self,
-            filePath="C:/Users/dim/Videos/Captures",
+            path="C:/Users/dim/Videos/Captures",
             # bigFileList=[["file.png","recorded"]],
             pageSize=10,
-            fileIndex=0,
+            index=0,
             pageIndex=0,
     ) -> None:
-        self.filePath = filePath
+        self.path = path
         # self.bigFileList = bigFileList
-        self.fileIndex = fileIndex
+        self.index = index
         self.pageSize = pageSize
         self.pageIndex = pageIndex
         self.leWorksheet = oscarWorksheet()
@@ -232,39 +232,40 @@ class oscarFileMeta():
     def updateStatus(self):
         # get the list of ignored and recorded files from the spread sheet and line them up with the directory
         # get a fresh list of files in a directory starting with overwatch and ends with .png
-        self.fileNameList = [fN for fN in os.listdir(self.filePath) if fN[-4:] == ".png" and fN[:10] == "Overwatch "]
+        self.nameList = [fN for fN in os.listdir(self.path) if fN[-4:] == ".png" and fN[:10] == "Overwatch "]
         print("testing mark two")
 
-        self.filePathList = []
+        self.pathList = []
         self.statusList = []
 
         igList, reList = self.leWorksheet.getStatus()
 
-        for file in self.fileNameList:
-            if self.filePath+'/'+file in igList:
-                self.filePathList.append(self.filePath+'/'+file)
+        for file in self.nameList:
+            if self.path+'/'+file in igList:
+                self.pathList.append(self.path+'/'+file)
                 self.statusList.append('ignored')
-            elif self.filePath+'/'+file in reList:
-                self.filePathList.append(self.filePath+'/'+file)
+            elif self.path+'/'+file in reList:
+                self.pathList.append(self.path+'/'+file)
                 self.statusList.append('recorded')
             else:
-                self.filePathList.append(self.filePath+'/'+file)
+                self.pathList.append(self.path+'/'+file)
                 self.statusList.append('unstored')
 
         # make a list of files that are paginated
         # qty of pages:
-        self.pageQTY = -(len(self.fileNameList) // -self.pageSize)
-        self.pagdFileList = [[] for _ in range(self.pageQTY)]
-        for idx, fileName in enumerate(self.fileNameList):
+        self.pageQTY = -(len(self.nameList) // -self.pageSize)
+        self.pagdList = [[] for _ in range(self.pageQTY)]
+        for idx, fileName in enumerate(self.nameList):
             current_page = idx//self.pageSize
             # print(f"fileList[{current_page}].append({fileName})")
-            self.pagdFileList[current_page].append([fileName,self.statusList[idx]])
+            self.pagdList[current_page].append((fileName,self.statusList[idx]))  # ?????
 
         self.updateData()
 
     def updateData(self):
-        self.fileName = self.fileNameList[self.fileIndex]
-        self.fullFilePath = self.filePathList[self.fileIndex]
+        self.name = self.nameList[self.index]
+        self.namePath = self.pathList[self.index]
+        self.status = self.statusList[self.index]
 
     # def updateFileIndex(self,leFileIndex):
     #     self.fileIndex = leFileIndex
@@ -275,66 +276,66 @@ class oscarFileMeta():
     #     self.updateStatus()
 
     def dumpData(self):
-        print('self.fileName:')
-        pp(self.fileName)
-        print('self.filePath')
-        pp(self.filePath)
-        print('self.fileIndex')
-        pp(self.fileIndex)
+        print('self.name:')
+        pp(self.name)
+        print('self.path')
+        pp(self.path)
+        print('self.namePath')
+        pp(self.namePath)
+        print('self.index')
+        pp(self.index)
         print('self.pageQTY')
         pp(self.pageQTY)
         print('self.pageIndex')
         pp(self.pageIndex)
-        print('self.filePathList')
-        pp(self.filePathList)
+        print('self.pathList')
+        pp(self.pathList)
         print('self.statusList')
         pp(self.statusList)
-        print('self.fileNameList')
-        pp(self.fileNameList)
-        print('self.pagdFileList')
-        pp(self.pagdFileList)
+        print('self.nameList')
+        pp(self.nameList)
+        print('self.pagdList')
+        pp(self.pagdList)
         # print('')
         # pp()
-        # print('')
-        # pp()
-        # print('')
-        # pp()
+
 
 
 if __name__ == '__main__':
-    test = fileMeta()
+    test = oscarFileMeta()
     test.dumpData()
 
-    # testing mark two
-    # self.fileName
+    # self.name:
     # 'Overwatch 3_29_2024 2_30_03 PM.png'
-    # self.filePath
+    # self.path
     # 'C:/Users/dim/Videos/Captures'
-    # self.currentIndex
+    # self.namePath
+    # 'C:/Users/dim/Videos/Captures/Overwatch 3_29_2024 2_30_03 PM.png'
+    # self.index
     # 0
-    # self.filePathList
+    # self.pageQTY
+    # 5
+    # self.pageIndex
+    # 0
+    # self.pathList
     # ['C:/Users/dim/Videos/Captures/Overwatch 3_29_2024 2_30_03 PM.png',
     # 'C:/Users/dim/Videos/Captures/Overwatch 3_29_2024 2_44_16 PM.png',
-    # '...',
-    # 'C:/Users/dim/Videos/Captures/Overwatch 8_3_2023 7_13_19 PM.png',
     # 'C:/Users/dim/Videos/Captures/Overwatch 8_8_2023 10_12_22 AM.png']
     # self.statusList
     # ['recorded',
-    # 'recorded',
-    # '...',
-    # 'recorded',
+    # 'ignored',
     # 'recorded']
-    # self.fileNameList
+    # self.nameList
     # ['Overwatch 3_29_2024 2_30_03 PM.png',
     # 'Overwatch 3_29_2024 2_44_16 PM.png',
-    # '...',
-    # 'Overwatch 8_3_2023 7_13_19 PM.png',
     # 'Overwatch 8_8_2023 10_12_22 AM.png']
-    # self.numberPages
-    # 5
-    # self.pagdFileList
-    # [[['Overwatch 3_29_2024 2_30_03 PM.png', 'recorded'],
-    # ['Overwatch 3_29_2024 2_44_16 PM.png', 'recorded'],
-    # '...',
-    # ['Overwatch 8_3_2023 7_13_19 PM.png', 'recorded'],
-    # ['Overwatch 8_8_2023 10_12_22 AM.png', 'recorded']]]
+    # self.pagdList
+    # [[('Overwatch 3_29_2024 2_30_03 PM.png', 'recorded'),
+    # ('Overwatch 3_30_2024 4_09_46 PM.png', 'ignored')],
+    # [('Overwatch 3_30_2024 4_09_50 PM.png', 'recorded'),
+    # ('Overwatch 4_2_2024 4_51_28 PM Ana.png', 'ignored')],
+    # [('Overwatch 4_2_2024 4_51_40 PM Baptiste.png', 'ignored'),
+    # ('Overwatch 8_8_2023 10_12_22 AM.png', 'recorded')]]
+
+    # test.index +=1
+    # test.updateData
