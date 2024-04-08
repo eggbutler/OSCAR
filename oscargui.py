@@ -22,7 +22,7 @@ class reviewData(QWidget):
         self.parent_window = parent_window
         response = response  + ['']
         self.fls = filesMeta  # files meta object
-        self.fls.updateData
+        self.fls.updateData()
 
         # Add a label for context
         self.label = QLabel(f'please check values for\n{self.fls.name}')
@@ -211,13 +211,13 @@ class FileButtonApp(QMainWindow):
         self.fls = oscarFileMeta(path=folderPath,pageSize=pageSize)
         # self.fls.dumpData()
 
-        # populate the cache
-        self.dtCache = analysisCache()
-        for idx, leFile in enumerate(self.fls.pathList):
+        # populate the cache with any unstored files
+        self.dtCache = analysisCache()  # setup the cache 
+        for idx, leFile in enumerate(self.fls.pathList):  
             if self.fls.statusList[idx] == 'unstored':
                 if leFile not in self.dtCache.dC.keys():
-                    # print(f'cacheing out {leFile}')
-                    self.dtCache.dC[leFile] = ripVAXTA(leFile)
+                    # add cache if it ain't already and it's gonna be
+                    self.dtCache.dC[leFile] = ripVAXTA(leFile)  
                     # print(self.dtCache.dC[leFile])
                 # else:
                     # print('skipping cacheing')
@@ -363,12 +363,12 @@ class FileButtonApp(QMainWindow):
 
     def show_previous_page(self):  # previous page of files and refresh buttons
         self.fls.pageIndex = max(self.fls.pageIndex - 1, 0)
-        self.fls.updateData
+        self.fls.updateData()
         self.display_files()
 
     def show_next_page(self):  # next page of files
         self.fls.pageIndex = min(self.fls.pageIndex + 1, self.fls.pageQTY - 1)
-        self.fls.updateData
+        self.fls.updateData()
         self.display_files()
 
     def open_file(self, leMessage):  # dummy function for placeholder button
@@ -384,15 +384,14 @@ class FileButtonApp(QMainWindow):
         # make a list out of the cached file path list 
         nameCacheList = [x for x in self.dtCache.dC.keys()]  # .split('/')[-1]
         if imageFileName in nameCacheList:
-            response = self.dtCache.dC[imageFileName]
-            self.new_window = reviewData(self, response, self.fls)
+            response = self.dtCache.dC[imageFileName]  # get the cached response
+            self.new_window = reviewData(self, response, self.fls)  # review cached resp
             self.new_window.show()
         else:
             print("didn't find image in cache")
             # update filesMeta based on the image file name
             response = ripVAXTA(self.fls.namePath)
-            # print('AIresponse',response)
-            self.dtCache.dC[self.fls.namePath] = response
+            self.dtCache.dC[self.fls.namePath] = response  # add/update to the cache
             self.dtCache.backupCache()
             self.new_window = reviewData(self, response, self.fls)
             self.new_window.show()
