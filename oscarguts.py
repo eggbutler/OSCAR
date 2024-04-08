@@ -92,7 +92,11 @@ def ripVAXTA(baseImagePath, saveSnippet = False):  # Take a path and return what
                         pixdata[x, y] = color[2] #replace with black
         #### for testing image#######
         if saveSnippet:
-            timeStampFileName = 'debug\\' + datetime.datetime.now().strftime("%Y%m%d.%H%M%S.%f") + '.png'
+            if not os.path.exists('debug'):  #  if there is a debug folder save the snippet there
+                leFilePath = 'debug\\' + datetime.datetime.now().strftime("%Y%m%d.%H%M%S.%f") + '.png'
+            else:  #  save the snippets to root
+                leFilePath = datetime.datetime.now().strftime("%Y%m%d.%H%M%S.%f") + '.png'
+            timeStampFileName = leFilePath
             leSnippet.save(timeStampFileName)
         #### for testing image#######
         # convert to an array
@@ -100,6 +104,7 @@ def ripVAXTA(baseImagePath, saveSnippet = False):  # Take a path and return what
 
         # analyse it
         leBlurb = pytesseract.image_to_string(leSnippet).replace("\n\n","\n").strip().split("\n")
+        # leBlurb = pytesseract.image_to_string(leSnippet)  # .replace("\n\n","\n").strip().split("\n")
         # print('leblurbPPP', leBlurb)
 
         leBlurb[0] = leBlurb[0].replace('  %','%')
@@ -293,7 +298,7 @@ class oscarFileMeta():
 
 
 class analysisCache:
-    """obect to hold the cache data:"""
+    """obect to hold the cache data coming out of Tesseract"""
     """{"filename and path':[val1, ... val6]}"""
     def __init__(self) -> None:
         # get a pickle
