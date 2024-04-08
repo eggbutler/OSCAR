@@ -245,12 +245,12 @@ class oscarFileMeta():
 
         # make a list of files that are paginated
         # qty of pages:
-        self.pageQTY = -(len(self.nameList) // -self.pageSize)
+        self.pageQTY = -(len(self.pathList) // -self.pageSize)
         self.pagdList = [[] for _ in range(self.pageQTY)]
-        for idx, fileName in enumerate(self.nameList):
+        for idx, filePath in enumerate(self.pathList):
             current_page = idx//self.pageSize
             # print(f"fileList[{current_page}].append({fileName})")
-            self.pagdList[current_page].append((fileName,self.statusList[idx]))  # ?????
+            self.pagdList[current_page].append((filePath,self.statusList[idx]))  # ?????
 
         self.updateData()
 
@@ -300,16 +300,15 @@ class analysisCache:
         if os.path.exists('dataCache.pickle'):
             print('found the cache')
             with open ('dataCache.pickle', 'rb') as p:
-                self.dataCache = pickle.load(p)
-            # return self.dataCache
+                self.dC = pickle.load(p)
         else:
             print('no data cache found; starting a new one')
-            self.dataCache = {}
+            self.dC = {}
             # return self.datacache
+
     def backupCache(self):
-        print('cache money yo')
-        # self.dataCache = newCache
-        with open ('dataCache.pickle','wb') as p: pickle.dump(self.dataCache,p)
+        with open ('dataCache.pickle','wb') as p: 
+            pickle.dump(self.dC,p)
 
 
 

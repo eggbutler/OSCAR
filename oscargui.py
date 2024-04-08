@@ -1,6 +1,6 @@
 import sys, os, pickle
 from PyQt6.QtWidgets import QApplication, QMainWindow, QFileDialog, QPushButton, QHBoxLayout, QVBoxLayout, \
-        QWidget, QInputDialog, QLabel, QLineEdit
+        QWidget, QInputDialog, QLabel, QLineEdit, QMessageBox
 from PyQt6.QtGui import QIcon, QAction
 from PyQt6.QtCore import Qt
 # from PIL import Image
@@ -91,18 +91,20 @@ class reviewData(QWidget):
         # leStats = ["240","32","20","39%","20%"]
         self.fls.index = max(0,self.fls.index-1)  # index the index down
         self.fls.updateData()
-        leStats = ripVAXTA(self.fls.namePath)  # read the new file
-        self.new_window = reviewData(self.parent_window, leStats, self.fls)
-        self.new_window.show()  # show the previous file
+        # leStats = ripVAXTA(self.fls.namePath)  # read the new file
+        self.parent_window.analyseImage(self.fls.namePath)  # read the new file
+        # self.new_window = reviewData(self.parent_window, leStats, self.fls)
+        # self.new_window.show()  # show the previous file
         self.close()
 
     def show_next_file(self):  # find next file in the index and look up it's data.
         # leStats = ["240","32","20","39%","20%"]
         self.fls.index = min(len(self.fls.nameList),self.fls.index+1)  # index the index up
         self.fls.updateData()
-        leStats = ripVAXTA(self.fls.namePath)  # read the new file
-        self.new_window = reviewData(self.parent_window, leStats, self.fls)
-        self.new_window.show()  # show the previous file
+        # leStats = ripVAXTA(self.fls.namePath)  # read the new file
+        self.parent_window.analyseImage(self.fls.namePath)  # open a new window using the parent's function
+        # self.new_window = reviewData(self.parent_window, leStats, self.fls)
+        # self.new_window.show()  # show the previous file
         self.close()
 
     def print_input_values(self):  #  dummy function for button
@@ -212,8 +214,17 @@ class FileButtonApp(QMainWindow):
         # populate the cache
         self.dtCache = analysisCache()
         for idx, leFile in enumerate(self.fls.pathList):
-            if self.fls.statusList[idx] == "unrecorded":
-                self.dtCache[leFile] = ripVAXTA(self.fls.namePath)
+            if self.fls.statusList[idx] == 'unstored':
+                if leFile not in self.dtCache.dC.keys():
+                    # print(f'cacheing out {leFile}')
+                    self.dtCache.dC[leFile] = ripVAXTA(leFile)
+                    # print(self.dtCache.dC[leFile])
+                # else:
+                    # print('skipping cacheing')
+            # else:
+            #     print(f"it wasn't unstored? self.fls.statusList[idx] status")
+            #     print(self.fls.statusList[idx])
+
         self.dtCache.backupCache()
 
 
@@ -285,6 +296,9 @@ class FileButtonApp(QMainWindow):
                     print('failed number test')
             except AttributeError:
                 print('attrib error...probably not an int')
+                pageError = QMessageBox(self)
+                pageError.setWindowTitle('Oops?!')
+                pageError.setText("Bad news for you. That page size won't work")
 
     def initializeSettings(self):  # load config pickle to get folder path and page size
         # Get the directory path using QFileDialog
@@ -363,28 +377,25 @@ class FileButtonApp(QMainWindow):
 
     def analyseImage(self, imageFileName):  # take an image path and return it's statistics
         # should do something here with the image:
-        self.fls.index = self.fls.nameList.index(imageFileName)
+        self.fls.index = self.fls.pathList.index(imageFileName)
         self.fls.updateData()
+        # print('self.dtCache.dC',self.dtCache.dC)
         # check if file is in the dtcache
-        if imageFileName in list(self.dtCache.dataCache.values()):
-            response = self.dtCache.dataCache[imageFileName]
+        # make a list out of the cached file path list 
+        nameCacheList = [x for x in self.dtCache.dC.keys()]  # .split('/')[-1]
+        if imageFileName in nameCacheList:
+            response = self.dtCache.dC[imageFileName]
             self.new_window = reviewData(self, response, self.fls)
             self.new_window.show()
         else:
+            print("didn't find image in cache")
             # update filesMeta based on the image file name
             response = ripVAXTA(self.fls.namePath)
-            self.dtCache.dataCache[self.fls.namePath] = response
+            # print('AIresponse',response)
+            self.dtCache.dC[self.fls.namePath] = response
             self.dtCache.backupCache()
             self.new_window = reviewData(self, response, self.fls)
             self.new_window.show()
-
-    def analyseImageData(self, imageFileName):  # take an image path and return it's statistics
-        # should do something here with the image:
-        # update filesMeta based on the image file name
-        self.fls.index = self.fls.nameList.index(imageFileName)
-        self.fls.updateData()
-        response = ripVAXTA(self.fls.namePath)
-        return response
 
 
 

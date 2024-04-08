@@ -156,3 +156,4 @@ debug/
 scrap*
 conf.pickle
 .vscode/
+dataCache.pickle
