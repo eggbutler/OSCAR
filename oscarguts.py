@@ -32,89 +32,89 @@ def ripVAXTA(baseImagePath, saveSnippet = False):  # Take a path and return what
     # empty list for output:
     textList = []
     # look for hero name:
-    textList.extend([findTheHeroName(baseImagePath)])
+    textList.append(findTheHeroName(baseImagePath))
     baseImage = Image.open(baseImagePath)
     # check if the image is windowed:
     # baseImage = cleanWindowedImages(baseImage)
     w, h = baseImage.size
 
-    percentageMatrix = [ # vaxta matrix of snippets in proportions to the page
-        [0.047656250,0.114583333,0.125781250,0.142361111], # Timer 
-        [0.056640625,0.142361111,0.119140625,0.170138889], # Kills
-        [0.033203125,0.168055556,0.142578125,0.195833333], # KillsperMin 
-        [0.035156250,0.193750000,0.142578125,0.221527778], # accuracy
-        [0.019531250,0.218750000,0.156250000,0.246527778], # crit accuracy
+    # vaxta snippet of scoreboard in proportions to the page
+    # percentageMatrix = [0.02600,0.14000,0.15500,0.29600] # scoreboard
+    # smol tuple of how much to crop out the image calculated range by 
+    # getting the loosest measurement from a list of the most extreme window sizes
+    #                                Left     Top      Right    Bottom
+    cLeft, cTop, cRight, cBottom = ( 0.02600, 0.11200, 0.15500, 0.29600 )
+
+    cropCrap = ( 
+        w*cLeft,   # left
+        h*cTop,    # top
+        w*cRight,  # right
+        h*cBottom  # bottom
+    )
+    # crop out one of the sections 
+    scoreBoard = baseImage.crop(cropCrap)
+    if saveSnippet:
+        if len(baseImagePath.split("/"))>=2:
+            fName = baseImagePath.split('/')[-1].split('.')[-2]
+        else:
+            fName = baseImagePath.split('.')[-2]
+        leFilePath = 'debug\\' + datetime.datetime.now().strftime("%d.%H%M%S.%f") + f'-Scoreboard-{fName}.png'
+        scoreBoard.save(leFilePath)
+    # HSV arrays of the bottom and top ranges to look for.  Hue is really doing the 
+    # heavy lifting here
+    colorRanges = [
+        [np.array([15,130,130]),np.array([22,255,255]), "timer"],        # orange (Timer)
+        [np.array([85,130,130]),np.array([95,255,255]), "kills"],        # aqua (Kills)
+        [np.array([98,130,130]),np.array([107,255,255]),"kpm"],          # blue (Kills per min)
+        [np.array([35,130,130]),np.array([45,255,255]), "accuracy"],     # lime (Green Accuracy)
+        [np.array([75,130,130]),np.array([85,255,255]), "critAccuracy"], # green (Crit Accuracy)
     ]
 
-    for snippet in range(len(percentageMatrix)):
-        cropCrap = (
-            # smol tuple of how much to crop out the image
-            w*percentageMatrix[snippet][0],  # left
-            h*percentageMatrix[snippet][1],  # top
-            w*percentageMatrix[snippet][2],  # right
-            h*percentageMatrix[snippet][3]   # bottom
-        )
+    # Make a new image pulling each color (top/bottom) pair
+    for bot, top, nickName in colorRanges:  
+        MIN = bot
+        MAX = top
+        # convert the scoreboard PIL to a CV2 then to an NP and do stuff
+        nArray = np.array(scoreBoard)
+        # nArray = cv2.imread(scoreBoard)
+        hsv_img = cv2.cvtColor(nArray ,cv2.COLOR_RGB2HSV)
+        # Use OpenCV to read the hue pulled
+        frame_threshed = cv2.inRange(hsv_img, MIN, MAX)
 
-        # crop out one of the sections 
-        # leSnippet = np.array(baseImage.crop(cropCrap))  
-        leSnippet = baseImage.crop(cropCrap)
-
-        # Try and clean up the image
-        #  matrix of RGBA colors to search for, fuzziness, RGBA colors to change it to
-        colorsToChange = [  
-            [(240, 240, 240, 255),  30, (255,255,255,255)],  # wall color
-            [(200, 200, 200, 255),  30, (255,255,255,255)],  # wall color
-            [(160, 160, 160, 255),  30, (255,255,255,255)],  # wall color
-            [(120, 120, 120, 255),  30, (255,255,255,255)],  # wall color
-            [( 80,  80,  80, 255),  30, (255,255,255,255)],  # wall color
-            [( 40,  40,  40, 255),  30, (255,255,255,255)],  # wall color
-            [(  5,   5,   5, 255),  30, (255,255,255,255)],  # wall color
-            [(236, 153,   0, 255),  70, (  0,  0,  0,255)],  # orangeColor
-            [(0,   234, 234, 255),  70, (  0,  0,  0,255)],  # aquaColor 
-            [(38,  170, 255, 255),  70, (  0,  0,  0,255)],  # oceanColor
-            [(160, 232,  22, 255),  70, (  0,  0,  0,255)],  # limeColor 
-            [(0,   230, 150, 255),  70, (  0,  0,  0,255)],  # foamColor 
-        ]
-        leSnippet = leSnippet.convert("RGBA")
-        pixdata = leSnippet.load()
-
-        #trying to take all the gray colors and try to wash them out
-        #then find the 5 text colors and bring them out.
-        for color in colorsToChange:
-            for y in range(leSnippet.size[1]):
-                for x in range(leSnippet.size[0]):
-                    # totalColorDiff = 0
-                    shouldReplace = True
-                    for idx in range(3): #include RGB but exclude alpha
-                        if abs(pixdata[x, y][idx] - color[0][idx]) > color[1]:
-                            shouldReplace = False
-                    if shouldReplace:
-                        pixdata[x, y] = color[2] #replace with black
         #### for testing image#######
         if saveSnippet:
-            if not os.path.exists('debug'):  #  if there is a debug folder save the snippet there
-                leFilePath = 'debug\\' + datetime.datetime.now().strftime("%Y%m%d.%H%M%S.%f") + '.png'
+            if os.path.exists('debug'):  #  if there is a debug folder save the snippet there
+                # print('test two')
+                leFilePath = 'debug\\' + datetime.datetime.now().strftime("%d.%H%M%S.%f") + f'{nickName}.png'
             else:  #  save the snippets to root
-                leFilePath = datetime.datetime.now().strftime("%Y%m%d.%H%M%S.%f") + '.png'
-            timeStampFileName = leFilePath
-            leSnippet.save(timeStampFileName)
+                # print('test one ')
+                leFilePath = datetime.datetime.now().strftime("%d.%H%M%S.%f") + f'{nickName}.png'
+            # timeStampFileName = leFilePath
+            #make a png out of the color extract
+            cv2.imwrite(leFilePath,frame_threshed)
+            # lePNG = cv2.imencode('.png', frame_threshed)
+            # lePNG.save(leFilePath)
         #### for testing image#######
+
         # convert to an array
-        leSnippet = np.array(leSnippet)  
+        nArray = np.array(frame_threshed)
 
         # analyse it
-        leBlurb = pytesseract.image_to_string(leSnippet).replace("\n\n","\n").strip().split("\n")
+        leBlurb = pytesseract.image_to_string(nArray, config=r"--psm 7").replace("\n\n","\n").strip()
         # leBlurb = pytesseract.image_to_string(leSnippet)  # .replace("\n\n","\n").strip().split("\n")
         # print('leblurbPPP', leBlurb)
+        # custom_oem_psm_config = r'--oem 3 --psm 6'
+        # pytesseract.image_to_string(image, config=custom_oem_psm_config
 
-        leBlurb[0] = leBlurb[0].replace('  %','%')
-        leBlurb[0] = leBlurb[0].replace(' %','%')
+        leBlurb = leBlurb.replace('  %','%')
+        leBlurb = leBlurb.replace(' %','%')
 
         # put each line into the list of stuff (and only the parts after the colon if found)
-        if len(leBlurb[0].split(":"))==2:
-            textList.extend([leBlurb[0].split(":")[1]])
+        print(leBlurb)
+        if len(leBlurb.split(":"))==2:
+            textList.append(leBlurb.split(":")[1])
         else:
-            textList.extend(leBlurb)
+            textList.append(leBlurb)
 
     return textList
 
