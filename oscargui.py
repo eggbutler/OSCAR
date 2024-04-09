@@ -271,12 +271,21 @@ class FileButtonApp(QMainWindow):
     def updateFolder (self):  # update monitored folder setting menu
         print("updating path")
         folder_path = QFileDialog.getExistingDirectory(self, "Select a directory")
-        # put settings into dictionary
-        settings = {'folder_path' : folder_path, 'items_per_page' : self.fls.pageSize,}
-        # update pickle to conf.pickle
-        with open ('conf.pickle','wb') as p: pickle.dump(settings,p)
-        self.fls.path = folder_path
-        self.display_files
+        if folder_path != "":
+            # put settings into dictionary
+            settings = {'folder_path' : folder_path, 'items_per_page' : self.fls.pageSize,}
+            # update pickle to conf.pickle
+            with open ('conf.pickle','wb') as p: pickle.dump(settings,p)
+            # update main window
+            self.fls.path = folder_path
+            self.fls.updateStatus()
+            self.display_files()
+        else:
+            print('Blank folder found')
+            pageError = QMessageBox(self)
+            pageError.setWindowTitle("Looks like it's amateur hour.")
+            pageError.setText("Blank folder was ignored!")
+            pageError.show()
 
     def editPage (self):  # update page size settings menu
         print('updating page size')
@@ -297,38 +306,47 @@ class FileButtonApp(QMainWindow):
             except AttributeError:
                 print('attrib error...probably not an int')
                 pageError = QMessageBox(self)
-                pageError.setWindowTitle('Oops?!')
+                pageError.setWindowTitle("I'm not your father")
                 pageError.setText("Bad news for you. That page size won't work")
+                pageError.show()
 
     def initializeSettings(self):  # load config pickle to get folder path and page size
         # Get the directory path using QFileDialog
         # folder_path = QFileDialog.getExistingDirectory(self, "Select a directory")
         if os.path.exists('conf.pickle'): 
             print('testing pickle')
-            try:
-                # pull settings from dictionary
-                with open ('conf.pickle', 'rb') as p:
-                    settings = pickle.load(p)
-                folder_path = settings['folder_path']
-                items_per_page = settings['items_per_page']
-                # from conf import folder_path
-                print('import sucess')
-            except FileNotFoundError:
-                print('broken pickle')
-                folder_path = QFileDialog.getExistingDirectory(self, "Select a directory")
-                items_per_page = 10
+            # pull settings from dictionary
+            with open ('conf.pickle', 'rb') as p:
+                settings = pickle.load(p)
+            folder_path = settings['folder_path']
+            items_per_page = settings['items_per_page']
+            # from conf import folder_path
+            print('import sucess', folder_path, items_per_page)
+            #  validate pickle data
+            print(folder_path != "")
+            print(3<items_per_page<50)
+            
+            if folder_path != "" and 3<items_per_page<51:
+                print('settings pickle win')
+            else:
+                print('settings pickle fail') 
+                pageError = QMessageBox(self)
+                pageError.setWindowTitle('Back...in black.')
+                pageError.setText("Sorry, sorry...sorry\nSettings failed. "
+                                  "Returning to default directory and page size.")
+                pageError.show()
+                # get originating directory...so I can get the sample images folder
+                script_directory = os.path.dirname(os.path.abspath(sys.argv[0]))
+                sampleDiretory = "sampleImages"
+                folder_path = os.path.join(script_directory,sampleDiretory).replace('\\','/')
+                # folder_path = QFileDialog.getExistingDirectory(self, "Select a directory")
+                # i should put this default value somewhere more intelligent.
+                items_per_page = 10   # DEFAULT VALUE
                 # put settings into dictionary
                 settings = {'folder_path' : folder_path, 'items_per_page' : items_per_page,}
-                # update pickle to conf.pickle
-                with open ('conf.pickle','wb') as p: pickle.dump(settings,p)
-        else:
-            print('missing pickle')
-            folder_path = QFileDialog.getExistingDirectory(self, "Select a directory")
-            items_per_page = 10
-            # put settings into dictionary
-            settings = {'folder_path' : folder_path, 'items_per_page' : items_per_page,}
-            # update pickle to conf.pickle
-            with open ('conf.pickle','wb') as p: pickle.dump(settings,p)
+                # Try and make a pickle at conf.pickle
+                with open ('conf.pickle','wb') as p:
+                    pickle.dump(settings,p)
         return folder_path, items_per_page
 
     def display_files(self):  # setup and add file buttons and navigation buttons
