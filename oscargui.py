@@ -17,6 +17,9 @@ from oscarguts import oscarBlue, oscarAqua, oscarCream, oscarRed, oscarYellow, b
 class reviewData(QWidget):
     def __init__(self, parent_window, response, filesMeta):  # initialize the words read from the image for human review
         super().__init__()
+
+        self.setWindowIcon(QIcon('icons/oscarAngry.ico'))
+
         layout = QVBoxLayout()
 
         self.parent_window = parent_window
@@ -60,9 +63,14 @@ class reviewData(QWidget):
         act_layout.addWidget(sendButton)
 
         # Create ignore button
-        ignoreButton = QPushButton("ignore")
+        ignoreButton = QPushButton("Ignore")
         ignoreButton.clicked.connect(self.ignoreFile)
         act_layout.addWidget(ignoreButton)
+
+        # Creat show image button
+        showButton = QPushButton("Show snips")
+        showButton.clicked.connect(lambda: self.print_input_values())  #dummy
+        act_layout.addWidget(showButton)
 
         layout.addLayout(act_layout)
 

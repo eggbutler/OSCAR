@@ -154,29 +154,31 @@ def cleanWindowedImages(leImage):
         print('not clipping title bar')
         return leImage
 
-# Iterate through templates and find matches in a screen shot
-def findTheHeroName(leFilePath,templatesType="Ab"):  # Templates = Ul or Ab
+# Iterate through templates and find matches
+def findTheHeroName(leFilePath,templatesType="Gn"):  # Templates = Ul or Ab
     """take an image path an return a hero's name"""
-    # slice out the bottom left corner: left, top, right, bottom 
-    baseImage = Image.open(leFilePath)
-    w,h = baseImage.size
-    propCrop = (0.62500000, 0.79861111, 0.82031250, 0.97222222)
-    realCrop = (propCrop[0]*w, propCrop[1]*h, propCrop[2]*w, propCrop[3]*h)
-    croppedImage = baseImage.crop(realCrop)
- 
+    testImage = Image.open(leFilePath)
+    w,h = testImage.size
+    propCrop = [0.7871093750,0.8208333333,0.9335937500,0.9305555556]  # proportional crop dims
     # image to test
-    image = cv2.cvtColor(np.array(croppedImage), cv2.COLOR_RGB2BGR)
-    # image = cv2.imread(leFilePath)
+    cvImage = cv2.imread(leFilePath)
+    #crop likely area:         #left top  righ bott
+    left, top, right, bottom = (int(w*propCrop[0]),int(h*propCrop[1]),int(w*propCrop[2]),int(h*propCrop[3]))
+    cropImg = cvImage[ top : bottom , left : right ]
+    # Extract white color
+    hsvImage = cv2.cvtColor(cropImg,cv2.COLOR_BGR2HSV) # cropped test image to hsv
+    limit = [(0  ,   0, 205),(180,  50, 255)]   # white
+    whiteImage = cv2.inRange(hsvImage,limit[0],limit[1])
+    # HSVagain = cv2.cvtColor(whiteImage, cv2.COLOR_HSV2BGR)
+    # grayImage = cv2.cvtColor(HSVagain, cv2.COLOR_BGR2GRAY)
     # listOfTemplates (thumbnails to look for)
-    templates = [ 
-        [x[:-7], cv2.imread(os.path.abspath(os.path.join("templates",x)))] \
-        for x in os.listdir("templates") if x[-7:-5] == templatesType  # 'Ul' or 'Ab'
-    ]
+    templates = [[x[:-7], cv2.imread(os.path.abspath(os.path.join("templates",x)), cv2.IMREAD_GRAYSCALE)] for x in os.listdir("templates") if x[-7:-5] == templatesType]
+    # cv2.imwrite('testwhite.png', whiteImage)
+    # cv2.imwrite('testtemplate.png', templates[0][1])
+    # print('here goes nothing.............')
     for template in templates:
-        result = cv2.matchTemplate(image, template[1], cv2.TM_CCOEFF_NORMED)
+        result = cv2.matchTemplate(whiteImage,template[1], cv2.TM_CCOEFF_NORMED)
         min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
-
-        # You can set a threshold to consider a match
         if max_val > 0.8:
             # template[0] is the associated name from the file name of the template
             print(f"Found {template[0]} at position {max_loc}")
