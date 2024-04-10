@@ -3,7 +3,7 @@ from PyQt6.QtWidgets import QApplication, QMainWindow, QFileDialog, QPushButton,
         QWidget, QInputDialog, QLabel, QLineEdit, QMessageBox
 from PyQt6.QtGui import QIcon, QAction
 from PyQt6.QtCore import Qt
-# from PIL import Image
+from PIL import Image
 # import pytesseract
 # import numpy as np
 from pprint import pprint as pp
@@ -68,8 +68,8 @@ class reviewData(QWidget):
         act_layout.addWidget(ignoreButton)
 
         # Creat show image button
-        showButton = QPushButton("Show snips")
-        showButton.clicked.connect(lambda: self.print_input_values())  #dummy
+        showButton = QPushButton("Show Image")
+        showButton.clicked.connect(lambda: self.showImage())  #dummy
         act_layout.addWidget(showButton)
 
         layout.addLayout(act_layout)
@@ -155,6 +155,11 @@ class reviewData(QWidget):
         self.parent_window.display_files()
         self.close()
 
+    def showImage(self):
+        print(self.fls.namePath)
+        testImage = Image.open(self.fls.namePath)
+        testImage.show()
+        
 
 class FileButtonApp(QMainWindow):
     def __init__(self):
@@ -406,6 +411,11 @@ class FileButtonApp(QMainWindow):
         self.fls.index = self.fls.pathList.index(imageFileName)
         self.fls.updateData()
         # print('self.dtCache.dC',self.dtCache.dC)
+        #check if we have an old data review window and destroy it
+        try:
+            self.new_window.close()
+        except:
+            pass
         # check if file is in the dtcache
         # make a list out of the cached file path list 
         nameCacheList = [x for x in self.dtCache.dC.keys()]  # .split('/')[-1]
