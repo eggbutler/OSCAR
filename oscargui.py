@@ -1,6 +1,6 @@
 import sys, os, pickle
 from PyQt6.QtWidgets import QApplication, QMainWindow, QFileDialog, QPushButton, QHBoxLayout, QVBoxLayout, \
-        QWidget, QInputDialog, QLabel, QLineEdit, QMessageBox
+        QWidget, QInputDialog, QLabel, QLineEdit, QMessageBox, QGridLayout
 from PyQt6.QtGui import QIcon, QAction, QIntValidator
 from PyQt6.QtCore import Qt
 from PIL import Image
@@ -283,6 +283,10 @@ class FileButtonApp(QMainWindow):
         exitAct.setStatusTip('Exit application')
         exitAct.triggered.connect(QApplication.instance().quit)
 
+        settingsWin = QAction(QIcon('icons/gear.png'), "&Settings", self)
+        settingsWin.setStatusTip('directory and page size')
+        settingsWin.triggered.connect(lambda: self.settingsPanel(self))
+
         # updatePath = QAction(QIcon((":help-content.svg")), '&Update monitored folder', self)
         updatePath = QAction(QIcon('icons/folder.png'), '&Update monitored folder', self)
         updatePath.setStatusTip('Update the path of the monitored folder')
@@ -297,6 +301,7 @@ class FileButtonApp(QMainWindow):
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('&File')
         fileMenu.addAction(exitAct)
+        fileMenu.addAction(settingsWin)
         fileMenu = menubar.addMenu('&Settings')
         fileMenu.addAction(updatePath)
         fileMenu.addAction(editPageSize)
@@ -328,7 +333,7 @@ class FileButtonApp(QMainWindow):
     def editPage (self):  # update page size settings menu
         print('updating page size')
         # Display an input dialog
-        text, ok = QInputDialog.getText(self, "Enter Text", "Please enter a number (4-50):")
+        text, ok = QInputDialog.getText(self, "Enter Text", "Please enter a number (4-50):", text=str(self.fls.pageSize))
         if ok and text:
             try:
                 if 3 < int(text) < 50:
@@ -431,6 +436,13 @@ class FileButtonApp(QMainWindow):
         # Implement logic to open the selected file
         print(f"Opening file: {leMessage}")
 
+    def settingsPanel(self, parent_window):  # dummy function for placeholder button
+        # Implement logic to open the selected file
+        print(f"Opening file: leMessage")
+        self.setWin = settingsWindow(parent_window)
+        self.setWin.show()
+
+
     def analyseImage(self, imageFileName):  # take an image path and return it's statistics
         # should do something here with the image:
         self.fls.index = self.fls.pathList.index(imageFileName)
@@ -456,6 +468,33 @@ class FileButtonApp(QMainWindow):
             self.dtCache.backupCache()
             self.new_window = reviewData(self, response, self.fls)
             self.new_window.show()
+
+class settingsWindow(QWidget):
+    def __init__(self, parent_window):
+        super().__init__()
+
+        self.setWindowIcon(QIcon('icons/oscarAngry.ico'))
+
+        self.pw = parent_window
+        # self.fls = filesMeta  # files meta object
+
+        setsGrid = QGridLayout()
+
+        folderLabel = QLabel(f'Monitored directory:\n{self.pw.fls.path}')
+        updateFolderButton = QPushButton("Update folder", self)
+        updateFolderButton.clicked.connect(self.pw.updateFolder)
+
+        pgSz = self.pw.fls.pageSize
+        pageSizeLabel = QLabel(f'Current page size:\n{pgSz}')
+        updatePageSizeButton = QPushButton("Update page size", self)
+        updatePageSizeButton.clicked.connect(self.pw.editPage)
+                                              #Row Col
+        setsGrid.addWidget(folderLabel,          0,  1)
+        setsGrid.addWidget(updateFolderButton,   0,  0)
+        setsGrid.addWidget(pageSizeLabel,        1,  1)
+        setsGrid.addWidget(updatePageSizeButton, 1,  0)
+        
+        self.setLayout(setsGrid)
 
 
 
