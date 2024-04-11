@@ -171,44 +171,70 @@ class FileButtonApp(QMainWindow):
         self.setGeometry(100, 100, 800, 200)
         self.initUI()
 
-        # create label
-        headLabels = QVBoxLayout()
+        # Create a central widget
+        centralWidget = QWidget()  # widget prime
+        centralLayout = QVBoxLayout()  # Layout that goes to widget prime
+
+        # create main top and bottom layout
+        headLayout = QVBoxLayout()  #color key and file buttons
+        headLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        footLayout = QVBoxLayout()  # Bottom layout to stick to the bottom
+        footLayout.setAlignment(Qt.AlignmentFlag.AlignBottom)
     
+        # Create a layout for buttons
+        self.buttonLayout = QVBoxLayout()  # file buttons
+        self.navigationLayout = QHBoxLayout()  #page nav buttons
+
+        # make the color key labels
         headLabelGray   = QLabel("gray: ignored")
         headLabelYellow = QLabel("yellow: unrecorded")
         headLabelYellow.setStyleSheet(oscarYellow)
         headLabelBlue   = QLabel("blue: recorded")
         headLabelBlue.setStyleSheet(oscarAqua)
-        headLabelBlue.setAlignment(Qt.AlignmentFlag.AlignTop)
-        headLableBlankBar = QLabel(' ')
+        headLableBlankBar = QLabel(' ')  #blank line I'm such a hack
         headLableBlankBar.setStyleSheet(oscarDGray)
-
-        headLabels.addWidget(headLabelGray)
-        headLabels.addWidget(headLabelYellow)
-        headLabels.addWidget(headLabelBlue) 
-        headLabels.addWidget(headLableBlankBar) 
-
-        # Create a layout for buttons
-        self.buttonLayout = QVBoxLayout()
-        self.navigationLayout = QHBoxLayout()
 
         # Create pagination buttons
         self.prevButton = QPushButton("Previous Page", self)
         self.nextButton = QPushButton("Next Page", self)
 
+        # Create page feed back label
+        self.pageFeedback = QLabel("Page _ of _")
+
         # Connect pagination buttons to functions
         self.prevButton.clicked.connect(self.show_previous_page)
         self.nextButton.clicked.connect(self.show_next_page)
 
-        # Create a central widget
-        centralWidget = QWidget()
-        centralLayout = QVBoxLayout()
-        centralLayout.addLayout(headLabels)  # Labels
-        centralLayout.addLayout(self.buttonLayout)  # Buttons row
-        centralLayout.addLayout(self.navigationLayout) # nav row
+
+        # Start building the gui
         centralWidget.setLayout(centralLayout)
-        centralWidget.setLayout(self.buttonLayout)
+        centralLayout.addLayout(headLayout)  # Labels
+        centralLayout.addLayout(footLayout) # page nav and page feed back
+
+        # Add top labels
+        headLayout.addWidget(headLabelGray)
+        headLayout.addWidget(headLabelYellow)
+        headLayout.addWidget(headLabelBlue) 
+        headLayout.addWidget(headLableBlankBar) 
+
+        headLayout.addLayout(self.buttonLayout)  # Buttons row
+
+        # add foot stuff
+        footLayout.addLayout(self.navigationLayout)
+        footLayout.addWidget(self.pageFeedback)
+
+        # Add pagination buttons
+        self.navigationLayout.addWidget(self.prevButton)
+        self.navigationLayout.addWidget(self.nextButton)
+
+
+        # centralLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        # centralLayout.addLayout(self.buttonLayout)  # Buttons row
+        # headLayout.setLayout(self.buttonLayout)
         self.setCentralWidget(centralWidget)
+
+        # self.pageFeedback.setAlignment(Qt.AlignmentFlag.AlignBottom)
+
 
         # Initialize file list and current page
         self.files = []  # List of file paths
@@ -241,12 +267,6 @@ class FileButtonApp(QMainWindow):
         self.dtCache.backupCache()
 
 
-        # Add pagination buttons
-        self.navigationLayout.addWidget(self.prevButton)
-        self.navigationLayout.addWidget(self.nextButton)
-
-        self.pageFeedback = QLabel("Page _ of _")
-        centralLayout.addWidget(self.pageFeedback)
 
         # Display initial files as buttons
         self.display_files()
