@@ -1,7 +1,7 @@
 import sys, os, pickle
 from PyQt6.QtWidgets import QApplication, QMainWindow, QFileDialog, QPushButton, QHBoxLayout, QVBoxLayout, \
         QWidget, QInputDialog, QLabel, QLineEdit, QMessageBox
-from PyQt6.QtGui import QIcon, QAction
+from PyQt6.QtGui import QIcon, QAction, QIntValidator
 from PyQt6.QtCore import Qt
 from PIL import Image
 # import pytesseract
@@ -47,12 +47,17 @@ class reviewData(QWidget):
         self.labels = ["Hero", "Timer:", "Kills:", "KillsperMin:", "accuracy:", "critAccuracy:","comment:"]
         self.input_fields = [QLineEdit() for _ in range(len(self.labels))]
 
+        # create some validators for the input fields:
+        intValidator = QIntValidator()
+
         for label, input_field, autoText in zip(self.labels, self.input_fields, response):
             label_widget = QLabel(label)
             input_field.setText(autoText)
             layout.addWidget(label_widget)
             input_field.setText(autoText)
             layout.addWidget(input_field)
+            if label in ["Timer:", "Kills:", "KillsperMin:"]:
+                input_field.setValidator(intValidator)
 
         # create action buttons
         act_layout = QHBoxLayout()
@@ -303,7 +308,7 @@ class FileButtonApp(QMainWindow):
 
     def updateFolder (self):  # update monitored folder setting menu
         print("updating path")
-        folder_path = QFileDialog.getExistingDirectory(self, "Select a directory")
+        folder_path = QFileDialog.getExistingDirectory(self, "Select a directory",self.fls.path)
         if folder_path != "":
             # put settings into dictionary
             settings = {'folder_path' : folder_path, 'items_per_page' : self.fls.pageSize,}
