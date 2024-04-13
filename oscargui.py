@@ -364,11 +364,8 @@ class FileButtonApp(QMainWindow):
             folder_path = settings['folder_path']
             items_per_page = settings['items_per_page']
             # from conf import folder_path
-            print('import sucess', folder_path, items_per_page)
+            # print('import sucess', folder_path, items_per_page)
             #  validate pickle data
-            print(folder_path != "")
-            print(3<items_per_page<50)
-            
             if folder_path != "" and 3<items_per_page<51:
                 print('settings pickle win')
             else:

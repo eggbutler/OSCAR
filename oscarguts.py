@@ -155,37 +155,46 @@ def cleanWindowedImages(leImage):
         return leImage
 
 # Iterate through templates and find matches
-def findTheHeroName(leFilePath,templatesType="Gn"):  # Templates = Ul or Ab
+def findTheHeroName(leFilePath,templatesType="A"):  # Templates = A or U or G  Ults and guns are dumb...abilities is best
     """take an image path an return a hero's name"""
     testImage = Image.open(leFilePath)
     w,h = testImage.size
-    propCrop = [0.7871093750,0.8208333333,0.9335937500,0.9305555556]  # proportional crop dims
+    # propCrop = [0.7871093750,0.8208333333,0.9335937500,0.9305555556]  # proportional crop dims guns
+    propCrop = [0.62500000,0.79861111,0.82031250,0.97222222]  # proportional crop dims abilities
     # image to test
     cvImage = cv2.imread(leFilePath)
-    #crop likely area:         #left top  righ bott
+    #crop likely area:         #left               top                righ               bott
     left, top, right, bottom = (int(w*propCrop[0]),int(h*propCrop[1]),int(w*propCrop[2]),int(h*propCrop[3]))
     cropImg = cvImage[ top : bottom , left : right ]
     # Extract white color
     hsvImage = cv2.cvtColor(cropImg,cv2.COLOR_BGR2HSV) # cropped test image to hsv
-    limit = [(0  ,   0, 205),(180,  50, 255)]   # white
-    whiteImage = cv2.inRange(hsvImage,limit[0],limit[1])
-    # HSVagain = cv2.cvtColor(whiteImage, cv2.COLOR_HSV2BGR)
-    # grayImage = cv2.cvtColor(HSVagain, cv2.COLOR_BGR2GRAY)
-    # listOfTemplates (thumbnails to look for)
-    templates = [[x[:-7], cv2.imread(os.path.abspath(os.path.join("templates",x)), cv2.IMREAD_GRAYSCALE)] for x in os.listdir("templates") if x[-7:-5] == templatesType]
-    # cv2.imwrite('testwhite.png', whiteImage)
-    # cv2.imwrite('testtemplate.png', templates[0][1])
-    # print('here goes nothing.............')
+    testImages = {  #  amber, white, and red extracted colors from the cropped test image
+        "a":cv2.inRange(hsvImage,(5  , 200, 200),(15,  230, 230)),  # amber colors extracted
+        "w":cv2.inRange(hsvImage,(0  ,   0, 205),(180,  50, 255)),  # white colors extracted
+        "r":cv2.inRange(hsvImage,(155, 160, 180),(180, 255, 255))}  # red colors extracted
+    templates = [[x[:-4], cv2.imread(os.path.abspath(os.path.join("templates",x)), cv2.IMREAD_GRAYSCALE)] for x in os.listdir("templates") if x[-7:-6] == templatesType]
     for template in templates:
-        result = cv2.matchTemplate(whiteImage,template[1], cv2.TM_CCOEFF_NORMED)
+        if w == 2560:
+            # print("no scale necessary")
+            templateScaled = template[1]
+        else:
+            # print("so scaley rn")
+            scaleDown = w/2560.000000000000
+            templateScaled = cv2.resize(
+                template[1],
+                (0,0), 
+                fx= scaleDown, 
+                fy= scaleDown, 
+                interpolation= cv2.INTER_AREA)
+        result = cv2.matchTemplate(testImages[template[0][-2:-1]],templateScaled, cv2.TM_CCOEFF_NORMED)
         min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+        # print("max_val",max_val)
         if max_val > 0.8:
             # template[0] is the associated name from the file name of the template
-            print(f"Found {template[0]} at position {max_loc}")
-            # print(template[1])
-            return template[0]
-
-# findTheHeroName("C:/Users/dim/Dropbox/projects/Overwatch Scrape/VAXTA/Overwatch 6_24_2023 9_52_04 AM.png")
+            print(f"Found {template[0][:-3]} at position {max_loc}")
+            return template[0][:-3]
+    print("no hero found")
+    return ""
 
 class oscarWorksheet():
     """interact with the worksheet"""
