@@ -19,6 +19,7 @@ class reviewData(QWidget):
         super().__init__()
 
         self.setWindowIcon(QIcon('icons/oscarAngry.ico'))
+        self.setWindowTitle("Review data")
 
         layout = QVBoxLayout()
 
@@ -28,15 +29,15 @@ class reviewData(QWidget):
         self.fls.updateData()
 
         # Add a label for context
-        self.label = QLabel(f'please check values for\n{self.fls.name}')
+        self.label = QLabel(f'Please check values for\n{self.fls.name}\nThen send!')
         if self.fls.status == 'ignored':
-            self.label2 = QLabel('This file was previously ignored')
+            self.label2 = QLabel('This file was previously ignored.')
         elif self.fls.status == 'recorded':
             self.label2 = QLabel('This file was already recorded!')
             self.label.setStyleSheet(oscarAqua)
             self.label2.setStyleSheet(oscarAqua)
         elif self.fls.status == 'unstored':
-            self.label2 = QLabel("This screen shot isn't in the spreadsheet!")
+            self.label2 = QLabel("This screen shot is NOT in the spreadsheet!")
             self.label.setStyleSheet(oscarYellow)
             self.label2.setStyleSheet(oscarYellow)
         layout.addWidget(self.label)
@@ -44,7 +45,7 @@ class reviewData(QWidget):
 
         # Create labels and input fields
         # "Timer:", "Kills:", "KillsperMin:", "accuracy:", "crit accuracy:"
-        self.labels = ["Hero", "Timer:", "Kills:", "KillsperMin:", "accuracy:", "critAccuracy:","comment:"]
+        self.labels = ["Hero:", "Timer:", "Kills:", "Kills per min:", "Accuracy:", "Critical Accuracy:","Comment:"]
         self.input_fields = [QLineEdit() for _ in range(len(self.labels))]
 
         # create some validators for the input fields:
@@ -73,7 +74,7 @@ class reviewData(QWidget):
         act_layout.addWidget(ignoreButton)
 
         # Creat show image button
-        showButton = QPushButton("Show Image")
+        showButton = QPushButton("Open image")
         showButton.clicked.connect(lambda: self.showImage())  #dummy
         act_layout.addWidget(showButton)
 
@@ -162,8 +163,7 @@ class reviewData(QWidget):
 
     def showImage(self):
         print(self.fls.namePath)
-        testImage = Image.open(self.fls.namePath)
-        testImage.show()
+        os.startfile(self.fls.namePath)
         
 
 class FileButtonApp(QMainWindow):
@@ -191,17 +191,17 @@ class FileButtonApp(QMainWindow):
         self.navigationLayout = QHBoxLayout()  #page nav buttons
 
         # make the color key labels
-        headLabelGray   = QLabel("gray: ignored")
-        headLabelYellow = QLabel("yellow: unrecorded")
+        headLabelGray   = QLabel("Gray: ignored")
+        headLabelYellow = QLabel("Yellow: unrecorded")
         headLabelYellow.setStyleSheet(oscarYellow)
-        headLabelBlue   = QLabel("blue: recorded")
+        headLabelBlue   = QLabel("Blue: recorded")
         headLabelBlue.setStyleSheet(oscarAqua)
         headLableBlankBar = QLabel(' ')  #blank line I'm such a hack
         headLableBlankBar.setStyleSheet(oscarDGray)
 
         # Create pagination buttons
-        self.prevButton = QPushButton("Previous Page", self)
-        self.nextButton = QPushButton("Next Page", self)
+        self.prevButton = QPushButton("Previous page", self)
+        self.nextButton = QPushButton("Next page", self)
 
         # Create page feed back label
         self.pageFeedback = QLabel("Page _ of _")
@@ -471,6 +471,7 @@ class settingsWindow(QWidget):
         super().__init__()
 
         self.setWindowIcon(QIcon('icons/oscarAngry.ico'))
+        self.setWindowTitle("Settings window")
 
         self.pw = parent_window
         # self.fls = filesMeta  # files meta object
