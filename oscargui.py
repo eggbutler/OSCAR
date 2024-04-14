@@ -176,10 +176,10 @@ class FileButtonApp(QMainWindow):
         super().__init__()
 
         if getattr(sys, 'frozen', False): # If  run as a PyInstaller bootloader
-            application_path = sys._MEIPASS
+            self.application_path = sys._MEIPASS
         else:
-            application_path = os.path.dirname(os.path.abspath(__file__))
-        iconPath = os.path.join(application_path,"icons","oscarAngry.ico")
+            self.application_path = os.path.dirname(os.path.abspath(__file__))
+        iconPath = os.path.join(self.application_path,"icons","oscarAngry.ico")
         self.setWindowIcon(QIcon(iconPath))
 
         self.setWindowTitle("List of 'Overwatch' images")
@@ -288,23 +288,33 @@ class FileButtonApp(QMainWindow):
 
     def initUI(self):  # add menu items
 
-        exitAct = QAction(QIcon('icons/exit.png'), '&Exit', self)
+
+        exitPath = os.path.join(self.application_path,'icons','exit.png')
+        exitAct = QAction(QIcon(exitPath), '&Exit', self)
         exitAct.setShortcut('Ctrl+Q')
         exitAct.setStatusTip('Exit application')
         exitAct.triggered.connect(QApplication.instance().quit)
 
-        settingsWin = QAction(QIcon('icons/gear.png'), "&Settings", self)
+        gearPath = os.path.join(self.application_path,'icons','gear.png')
+        settingsWin = QAction(QIcon(gearPath), "&Settings", self)
         settingsWin.setStatusTip('directory and page size')
         settingsWin.triggered.connect(lambda: self.settingsPanel(self))
 
+        foldPath = os.path.join(self.application_path,'icons','folder.png')
         # updatePath = QAction(QIcon((":help-content.svg")), '&Update monitored folder', self)
-        updatePath = QAction(QIcon('icons/folder.png'), '&Update monitored folder', self)
+        updatePath = QAction(QIcon(foldPath), '&Update monitored folder', self)
         updatePath.setStatusTip('Update the path of the monitored folder')
         updatePath.triggered.connect(self.updateFolder)
 
-        editPageSize = QAction(QIcon('icons/ui-text-field.png'), '&Edit page size', self)
+        textPath = os.path.join(self.application_path,'icons','ui-text-field.png')
+        editPageSize = QAction(QIcon(textPath), '&Edit page size', self)
         editPageSize.setStatusTip('Update the number of files per page')
         editPageSize.triggered.connect(self.editPage)
+
+        abutPath = os.path.join(self.application_path,'icons','oscarAngrySmall.png')
+        showAboutApp = QAction(QIcon(abutPath), '&About OSCAR', self)
+        showAboutApp.setStatusTip('What is this app?')
+        showAboutApp.triggered.connect(self.aboutOscar)
 
         self.statusBar()
 
@@ -315,6 +325,8 @@ class FileButtonApp(QMainWindow):
         fileMenu = menubar.addMenu('&Settings')
         fileMenu.addAction(updatePath)
         fileMenu.addAction(editPageSize)
+        fileMenu = menubar.addMenu('&About')
+        fileMenu.addAction(showAboutApp)
         # helpMenu = menuBar.addMenu(QIcon(":help-content.svg"), "&Help")
 
         self.setGeometry(300, 300, 350, 250)
@@ -359,9 +371,22 @@ class FileButtonApp(QMainWindow):
             except AttributeError:
                 print('attrib error...probably not an int')
                 pageError = QMessageBox(self)
-                pageError.setWindowTitle("I'm not your father")
+                pageError.setWindowTitle("I am not your father")
                 pageError.setText("Bad news for you. That page size won't work")
                 pageError.show()
+
+    def aboutOscar(self):
+        self.aboutWin = QMessageBox()
+        self.aboutWin.setWindowTitle("About O.S.C.A.R.")
+        self.aboutWin.setText("O.S.C.A.R.")
+        self.aboutWin.setInformativeText("O.S.C.A.R. stands for Overwatch Screen Capture Analysis Recorder. It\n"
+                                         "scans all files in a specified directory, reads them, then sends that\n"
+                                         "data to a Google sheet. You can double check the computer vision by\n"
+                                         "taking a look at the file.\n"
+                                         "GLHF! ~~EggButler")
+        self.aboutWin.setDetailedText("Did somebody say peanut butter?")  #Always plain
+        self.aboutWin.setStandardButtons(QMessageBox.StandardButton.Ok)
+        self.aboutWin.exec()
 
     def initializeSettings(self):  # load config pickle to get folder path and page size
         # Get the directory path using QFileDialog
