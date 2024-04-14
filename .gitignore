@@ -152,7 +152,8 @@ cython_debug/
 #.idea/
 
 # DDC stuff for OSCAR
-debug/
+debug/*
+!debug/.gitkeep
 scrap*
 conf.pickle
 .vscode/

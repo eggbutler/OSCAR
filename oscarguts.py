@@ -27,181 +27,171 @@ def paginateList(listofdata, itemsQTY=5):  # take a list and cut it up into list
         fileList[current_page].append(fileName)
     return fileList
 
-def ripVAXTA(baseImagePath, saveSnippet = False):  # Take a path and return what info is in the top left VAXTA corner
-    """take a VAXTA Screenshot and output a list of lines from there"""
-    # empty list for output:
-    textList = []
-    # look for hero name:
-    textList.append(findTheHeroName(baseImagePath))
-    baseImage = Image.open(baseImagePath)
-    # check if the image is windowed:
-    # baseImage = cleanWindowedImages(baseImage)
-    w, h = baseImage.size
-
-    # vaxta snippet of scoreboard in proportions to the page
-    # percentageMatrix = [0.02600,0.14000,0.15500,0.29600] # scoreboard
-    # smol tuple of how much to crop out the image calculated range by 
-    # getting the loosest measurement from a list of the most extreme window sizes
-    #                                Left     Top      Right    Bottom
-    cLeft, cTop, cRight, cBottom = ( 0.02600, 0.11200, 0.15500, 0.29600 )
-
-    cropCrap = ( 
-        w*cLeft,   # left
-        h*cTop,    # top
-        w*cRight,  # right
-        h*cBottom  # bottom
-    )
-    # crop out one of the sections 
-    scoreBoard = baseImage.crop(cropCrap)
-    if saveSnippet:
-        if len(baseImagePath.split("/"))>=2:
-            fName = baseImagePath.split('/')[-1].split('.')[-2]
+class oscarImage():
+    """take a file path and offer a read it...or what have you"""
+    def __init__(self, filePath) -> None:
+        self.leP = filePath
+        if os.path.exists(filePath):
+            print("heyoooooooo lets goooo")
         else:
-            fName = baseImagePath.split('.')[-2]
-        leFilePath = 'debug\\' + datetime.datetime.now().strftime("%d.%H%M%S.%f") + f'-Scoreboard-{fName}.png'
-        scoreBoard.save(leFilePath)
-    # HSV arrays of the bottom and top ranges to look for.  Hue is really doing the 
-    # heavy lifting here
-    colorRanges = [
-        [np.array([15,130,130]),np.array([22,255,255]), "timer"],        # orange (Timer)
-        [np.array([85,130,130]),np.array([95,255,255]), "kills"],        # aqua (Kills)
-        [np.array([98,130,130]),np.array([107,255,255]),"kpm"],          # blue (Kills per min)
-        [np.array([35,130,130]),np.array([45,255,255]), "accuracy"],     # lime (Green Accuracy)
-        [np.array([75,130,130]),np.array([85,255,255]), "critAccuracy"], # green (Crit Accuracy)
-    ]
-
-    # Make a new image pulling each color (top/bottom) pair
-    for bot, top, nickName in colorRanges:  
-        MIN = bot
-        MAX = top
-        # convert the scoreboard PIL to a CV2 then to an NP and do stuff
-        nArray = np.array(scoreBoard)
-        # nArray = cv2.imread(scoreBoard)
-        hsv_img = cv2.cvtColor(nArray ,cv2.COLOR_RGB2HSV)
-        # Use OpenCV to read the hue pulled
-        frame_threshed = cv2.inRange(hsv_img, MIN, MAX)
-
-        #### for testing image#######
-        if saveSnippet:
-            if os.path.exists('debug'):  #  if there is a debug folder save the snippet there
-                # print('test two')
-                leFilePath = 'debug\\' + datetime.datetime.now().strftime("%d.%H%M%S.%f") + f'{nickName}.png'
-            else:  #  save the snippets to root
-                # print('test one ')
-                leFilePath = datetime.datetime.now().strftime("%d.%H%M%S.%f") + f'{nickName}.png'
-            # timeStampFileName = leFilePath
-            #make a png out of the color extract
-            cv2.imwrite(leFilePath,frame_threshed)
-            # lePNG = cv2.imencode('.png', frame_threshed)
-            # lePNG.save(leFilePath)
-        #### for testing image#######
-
-        # convert to an array
-        nArray = np.array(frame_threshed)
-
-        # analyse it
-        leBlurb = pytesseract.image_to_string(nArray, config=r"--psm 7").replace("\n\n","\n").strip()
-        # leBlurb = pytesseract.image_to_string(leSnippet)  # .replace("\n\n","\n").strip().split("\n")
-        # print('leblurbPPP', leBlurb)
-        # custom_oem_psm_config = r'--oem 3 --psm 6'
-        # pytesseract.image_to_string(image, config=custom_oem_psm_config
-
-        leBlurb = leBlurb.replace('  %','%')
-        leBlurb = leBlurb.replace(' %','%')
-
-        # put each line into the list of stuff (and only the parts after the colon if found)
-        print(leBlurb)
-        if len(leBlurb.split(":"))==2:
-            textList.append(leBlurb.split(":")[1])
+            print('nope no filePath')
+        if getattr(sys, 'frozen', False): # If  run as a PyInstaller bootloader
+            self.application_path = sys._MEIPASS
         else:
-            textList.append(leBlurb)
+            self.application_path = os.path.dirname(os.path.abspath(__file__))
+        self.debugPath = os.path.join(self.application_path,'debug')
 
-    return textList
+    def ripVAXTA(self):  # take path and return scoreboard and hero
+        textList = []
+        textList.append(self.findHeroName())
+        textList.extend(self.ripScoreboard())
+        return textList
+    
+    def ripScoreboard(self,saveRGB=False,saveColorExtracts=False):  # Take a path and return what info is in the top left VAXTA corner
+        """take a VAXTA Screenshot and output a list of lines from there"""
+        # empty list for output:
+        textList = []
+        # look for hero name:
+        # textList.append(findTheHeroName(baseImagePath))
+        baseImage = Image.open(self.leP)
+        # check if the image is windowed:
+        # baseImage = cleanWindowedImages(baseImage)
+        w, h = baseImage.size
 
-def cleanWindowedImages(leImage):
-    # """remove the title bar from windowed screen shots"""
-    # leImage = Image.open("Overwatch 6_15_2023 1_27_11 PM.png")
-    w, h = leImage.size
-    cropTop = (
-        # smol tuple to get the title bar
-        1,      # left: 1 pixel black line
-        0,      # top: all the tops
-        w,      # right: full width
-        32  # bottom: at least I have a 30PX 
-    )
-    # crop out one of the sections 
-    titleBar = leImage.crop(cropTop)
-    # titleBar.save('test.png')
-    # analyse it
-    leBlurb = pytesseract.image_to_string(np.array(titleBar)).lower()
-    # print('leblurbxx',leBlurb)
-    if ("over" in leBlurb) or ("watch" in leBlurb):
-        # clip off the top
-        print('clipping title bar')
-        # print('old image dims:', leImage.size)
-        lrCrop = (w - (h-33)*16/9)/2
-        noTitleCrop = (
-            # smol tuple to crop off the title bar
-            lrCrop,   # left: 1 pixel black line
-            32,       # top: remove the top
-            w-lrCrop, # right: full width
-            h-1       # bottom: full bottom 
+        # vaxta snippet of scoreboard in proportions to the page
+        # percentageMatrix = [0.02600,0.14000,0.15500,0.29600] # scoreboard
+        # smol tuple of how much to crop out the image calculated range by 
+        # getting the loosest measurement from a list of the most extreme window sizes
+        #                                Left        Top      Right    Bottom
+        cLeft, cTop, cRight, cBottom = ( 0.02209375, 0.11200, 0.15500, 0.29600 )
+
+        cropCrap = ( 
+            w*cLeft,   # left
+            h*cTop,    # top
+            w*cRight,  # right
+            h*cBottom  # bottom
         )
-        leImage = leImage.crop(noTitleCrop)
-        print('new image dims:', leImage.size)
-        return leImage
-    else:
-        print('not clipping title bar')
-        return leImage
+        # crop out one of the sections 
+        scoreBoard = baseImage.crop(cropCrap)
+        if saveRGB:
+            if len(self.leP.split("/"))>=2:
+                fName = self.leP.split('/')[-1].split('.')[-2]
+            else:
+                fName = self.leP.split('.')[-2]
+            scoreBoardPath = os.path.join(self.debugPath,datetime.datetime.now().strftime("%d.%H%M%S.%f") + f'-Scoreboard-{fName}.png')
+            scoreBoard.save(scoreBoardPath)
+        # HSV arrays of the bottom and top ranges to look for.  Hue is really doing the 
+        # heavy lifting here
+        colorRanges = [
+            [np.array([15,130,130]),np.array([22,255,255]), "timer"],        # orange (Timer)
+            [np.array([85,130,130]),np.array([95,255,255]), "kills"],        # aqua (Kills)
+            [np.array([98,130,130]),np.array([107,255,255]),"kpm"],          # blue (Kills per min)
+            [np.array([35,130,130]),np.array([45,255,255]), "accuracy"],     # lime (Green Accuracy)
+            [np.array([75,130,130]),np.array([85,255,255]), "critAccuracy"], # green (Crit Accuracy)
+        ]
 
-# Iterate through templates and find matches
-def findTheHeroName(leFilePath,templatesType="A"):  # Templates = A or U or G  Ults and guns are dumb...abilities is best
-    """take an image path an return a hero's name"""
-    testImage = Image.open(leFilePath)
-    w,h = testImage.size
-    # propCrop = [0.7871093750,0.8208333333,0.9335937500,0.9305555556]  # proportional crop dims guns
-    propCrop = [0.62500000,0.79861111,0.82031250,0.97222222]  # proportional crop dims abilities
-    # image to test
-    cvImage = cv2.imread(leFilePath)
-    #crop likely area:         #left               top                righ               bott
-    left, top, right, bottom = (int(w*propCrop[0]),int(h*propCrop[1]),int(w*propCrop[2]),int(h*propCrop[3]))
-    cropImg = cvImage[ top : bottom , left : right ]
-    # Extract white color
-    hsvImage = cv2.cvtColor(cropImg,cv2.COLOR_BGR2HSV) # cropped test image to hsv
-    testImages = {  #  amber, white, and red extracted colors from the cropped test image
-        "a":cv2.inRange(hsvImage,(5  , 200, 200),(15,  230, 230)),  # amber colors extracted
-        "w":cv2.inRange(hsvImage,(0  ,   0, 205),(180,  50, 255)),  # white colors extracted
-        "r":cv2.inRange(hsvImage,(155, 160, 180),(180, 255, 255))}  # red colors extracted
+        # Make a new image pulling each color (top/bottom) pair
+        for bot, top, nickName in colorRanges:  
+            MIN = bot
+            MAX = top
+            # convert the scoreboard PIL to a CV2 then to an NP and do stuff
+            nArray = np.array(scoreBoard)
+            # nArray = cv2.imread(scoreBoard)
+            hsv_img = cv2.cvtColor(nArray ,cv2.COLOR_RGB2HSV)
+            # Use OpenCV to read the hue pulled
+            frame_threshed = cv2.inRange(hsv_img, MIN, MAX)
 
-    if getattr(sys, 'frozen', False): # If  run as a PyInstaller bootloader
-        application_path = sys._MEIPASS
-    else:
-        application_path = os.path.dirname(os.path.abspath(__file__))
-    templateDirectory = os.path.join(application_path,"templates")
-    fullDirectoryList = os.listdir(templateDirectory)
-    templates = [[x[:-4], cv2.imread(os.path.join(templateDirectory,x), cv2.IMREAD_GRAYSCALE)] for x in fullDirectoryList if x[-7:-6] == templatesType]
-    for template in templates:
-        if w == 2560:
-            # print("no scale necessary")
-            templateScaled = template[1]
-        else:
-            # print("so scaley rn")
-            scaleDown = w/2560.000000000000
-            templateScaled = cv2.resize(
-                template[1],
-                (0,0), 
-                fx= scaleDown, 
-                fy= scaleDown, 
-                interpolation= cv2.INTER_AREA)
-        result = cv2.matchTemplate(testImages[template[0][-2:-1]],templateScaled, cv2.TM_CCOEFF_NORMED)
-        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
-        # print("max_val",max_val)
-        if max_val > 0.8:
-            # template[0] is the associated name from the file name of the template
-            print(f"Found {template[0][:-3]} at position {max_loc}")
-            return template[0][:-3]
-    print("no hero found")
-    return ""
+            #### for testing image#######
+            if saveColorExtracts:
+                leFileName = datetime.datetime.now().strftime("%d.%H%M%S.%f") + f'-{nickName}.png'
+                leFilePath = os.path.join(self.debugPath,leFileName)
+                # timeStampFileName = leFilePath
+                #make a png out of the color extract
+                cv2.imwrite(leFilePath,frame_threshed)
+                # lePNG = cv2.imencode('.png', frame_threshed)
+                # lePNG.save(leFilePath)
+            #### for testing image#######
+
+            # convert to an array
+            nArray = np.array(frame_threshed)
+
+            # analyse it
+            leBlurb = pytesseract.image_to_string(nArray, config=r"--psm 7").replace("\n\n","\n").strip()
+            # leBlurb = pytesseract.image_to_string(leSnippet)  # .replace("\n\n","\n").strip().split("\n")
+            # print('leblurbPPP', leBlurb)
+            # custom_oem_psm_config = r'--oem 3 --psm 6'
+            # pytesseract.image_to_string(image, config=custom_oem_psm_config
+
+            leBlurb = leBlurb.replace('  %','%')
+            leBlurb = leBlurb.replace(' %','%')
+
+            # put each line into the list of stuff (and only the parts after the colon if found)
+            # print(leBlurb)
+            if len(leBlurb.split(":"))==2:
+                textList.append(leBlurb.split(":")[1])
+            else:
+                textList.append(leBlurb)
+
+        return textList
+
+    def findHeroName(self, templatesType = "A", saveSnippet = False, saveColor=False):  # scan a bottom right strip and return a hero String
+        # return hero name
+        """take an image path an return a hero's name"""
+        testImage = Image.open(self.leP)
+        w,h = testImage.size
+        # propCrop = [0.7871093750,0.8208333333,0.9335937500,0.9305555556]  # proportional crop dims guns
+        # propCrop = [0.62500000,0.79861111,0.82031250,0.97222222]  # proportional crop dims abilities
+        # propCrop = [0.66406250,0.79861111,0.89843750,0.97222222]  # proportional crop dims abilities
+        propCrop = [0.66406250,0.79861111,0.91796875,0.97222222]  # proportional crop dims abilities
+        # image to test
+        cvImage = cv2.imread(self.leP)
+        #crop likely area:         #left               top                righ               bott
+        left, top, right, bottom = (int(w*propCrop[0]),int(h*propCrop[1]),int(w*propCrop[2]),int(h*propCrop[3]))
+        cropImg = cvImage[ top : bottom , left : right ]
+        if saveColor:
+            colorPath = os.path.join(self.debugPath,datetime.datetime.now().strftime("%d.%H%M%S.%f") +"colorCrop-test.png")
+            cv2.imwrite(colorPath, cropImg)
+        # Extract white color
+        hsvImage = cv2.cvtColor(cropImg,cv2.COLOR_BGR2HSV) # cropped test image to hsv
+        testImages = {  #  amber, white, and red extracted colors from the cropped test image
+            "a":cv2.inRange(hsvImage,(5  , 200, 200),(15,  230, 230)),  # amber colors extracted
+            "w":cv2.inRange(hsvImage,(0  ,   0, 205),(180,  50, 255)),  # white colors extracted
+            "r":cv2.inRange(hsvImage,(155, 160, 180),(180, 255, 255))}  # red colors extracted
+        if saveSnippet:
+            for each in testImages:
+                colorPath = os.path.join(self.debugPath,datetime.datetime.now().strftime("%d.%H%M%S.%f") +" "+ each + "-test.png")
+                cv2.imwrite(colorPath, testImages[each])
+
+        # if getattr(sys, 'frozen', False): # If  run as a PyInstaller bootloader
+        #     application_path = sys._MEIPASS
+        # else:
+        #     application_path = os.path.dirname(os.path.abspath(__file__))
+        templateDirectory = os.path.join(self.application_path,"templates")
+        fullDirectoryList = os.listdir(templateDirectory)
+        templates = [[x[:-4], cv2.imread(os.path.join(templateDirectory,x), cv2.IMREAD_GRAYSCALE)] for x in fullDirectoryList if x[-7:-6] == templatesType]
+        for template in templates:
+            if w == 2560:
+                # print("no scale necessary")
+                templateScaled = template[1]
+            else:
+                # print("so scaley rn")
+                scaleDown = w/2560.000000000000
+                templateScaled = cv2.resize(
+                    template[1],
+                    (0,0), 
+                    fx= scaleDown, 
+                    fy= scaleDown, 
+                    interpolation= cv2.INTER_AREA)
+            result = cv2.matchTemplate(testImages[template[0][-2:-1]],templateScaled, cv2.TM_CCOEFF_NORMED)
+            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+            # print("max_val",max_val)
+            if max_val > 0.8:
+                # template[0] is the associated name from the file name of the template
+                print(f"Found {template[0][:-3]} at position {max_loc}")
+                return template[0][:-3]
+        print("no hero found")
+        return ""
+
 
 class oscarWorksheet():
     """interact with the worksheet"""
@@ -380,3 +370,15 @@ if __name__ == '__main__':
 
     # test.index +=1
     # test.updateData
+  
+    # from oscarguts import oscarImage
+    # left = "C:/Users/dim/Documents/GitHub/OSCAR/Overwatch 4_9_2024 6_21_21 PM WreckingBall.png"
+    # right = "C:/Users/dim/Documents/GitHub/OSCAR/Overwatch 4_9_2024 6_19_50 PM Sigma.png"
+
+    # leftTest = oscarImage(left).findHeroName(saveColor=True)
+    # rightTest = oscarImage(right).findHeroName(saveColor=True)
+    # leftTest = oscarImage(left).findHeroName(saveSnippet=True)
+    # rightTest = oscarImage(right).findHeroName(saveSnippet=True)
+    # scoretest = oscarImage(left).ripScoreboard(saveRGB=True, saveColorExtracts=True)
+    
+    # ripTest = oscarImage(left).ripVAXTA()

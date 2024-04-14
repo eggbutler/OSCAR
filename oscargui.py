@@ -9,8 +9,8 @@ from PIL import Image
 from pprint import pprint as pp
 import datetime
 # os.chdir('C:\\Users\\dim\\Documents\\GitHub\\OSCAR')
-from oscarguts import ripVAXTA, oscarWorksheet, oscarFileMeta, analysisCache
-from oscarguts import oscarBlue, oscarAqua, oscarCream, oscarRed, oscarYellow, bottomUnderline, oscarDGray
+from oscarguts import oscarWorksheet, oscarFileMeta, analysisCache
+from oscarguts import oscarBlue, oscarAqua, oscarCream, oscarRed, oscarYellow, bottomUnderline, oscarDGray, oscarImage
 
 
 
@@ -110,7 +110,7 @@ class reviewData(QWidget):
         # leStats = ["240","32","20","39%","20%"]
         self.fls.index = max(0,self.fls.index-1)  # index the index down
         self.fls.updateData()
-        # leStats = ripVAXTA(self.fls.namePath)  # read the new file
+        # leStats = oscarImage(self.fls.namePath)ripVAXTA()  # read the new file
         self.parent_window.analyseImage(self.fls.namePath)  # read the new file
         # self.new_window = reviewData(self.parent_window, leStats, self.fls)
         # self.new_window.show()  # show the previous file
@@ -120,7 +120,7 @@ class reviewData(QWidget):
         # leStats = ["240","32","20","39%","20%"]
         self.fls.index = min(len(self.fls.nameList),self.fls.index+1)  # index the index up
         self.fls.updateData()
-        # leStats = ripVAXTA(self.fls.namePath)  # read the new file
+        # leStats = oscarImage(self.fls.namePath).ripVAXTA()  # read the new file
         self.parent_window.analyseImage(self.fls.namePath)  # open a new window using the parent's function
         # self.new_window = reviewData(self.parent_window, leStats, self.fls)
         # self.new_window.show()  # show the previous file
@@ -271,7 +271,8 @@ class FileButtonApp(QMainWindow):
             if self.fls.statusList[idx] == 'unstored':
                 if leFile not in self.dtCache.dC.keys():
                     # add cache if it ain't already and it's gonna be
-                    self.dtCache.dC[leFile] = ripVAXTA(leFile)  
+                    # cache      filenamepath      get the image dat using oscarImage
+                    self.dtCache.dC[leFile] = oscarImage(leFile).ripVAXTA()
                     # print(self.dtCache.dC[leFile])
                 # else:
                     # print('skipping cacheing')
@@ -503,7 +504,7 @@ class FileButtonApp(QMainWindow):
         else:
             print("didn't find image in cache")
             # update filesMeta based on the image file name
-            response = ripVAXTA(self.fls.namePath)
+            response = oscarImage(self.fls.namePath).ripVAXTA()
             self.dtCache.dC[self.fls.namePath] = response  # add/update to the cache
             self.dtCache.backupCache()
             self.new_window = reviewData(self, response, self.fls)
