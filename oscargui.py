@@ -18,7 +18,12 @@ class reviewData(QWidget):
     def __init__(self, parent_window, response, filesMeta):  # initialize the words read from the image for human review
         super().__init__()
 
-        self.setWindowIcon(QIcon('icons/oscarAngry.ico'))
+        if getattr(sys, 'frozen', False): # If  run as a PyInstaller bootloader
+            application_path = sys._MEIPASS
+        else:
+            application_path = os.path.dirname(os.path.abspath(__file__))
+        iconPath = os.path.join(application_path,"icons","oscarAngry.ico")
+        self.setWindowIcon(QIcon(iconPath))
         self.setWindowTitle("Review data")
 
         layout = QVBoxLayout()
@@ -170,7 +175,12 @@ class FileButtonApp(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowIcon(QIcon('icons/oscarAngry.ico'))
+        if getattr(sys, 'frozen', False): # If  run as a PyInstaller bootloader
+            application_path = sys._MEIPASS
+        else:
+            application_path = os.path.dirname(os.path.abspath(__file__))
+        iconPath = os.path.join(application_path,"icons","oscarAngry.ico")
+        self.setWindowIcon(QIcon(iconPath))
 
         self.setWindowTitle("List of 'Overwatch' images")
         self.setGeometry(100, 100, 800, 200)
@@ -366,27 +376,32 @@ class FileButtonApp(QMainWindow):
             # from conf import folder_path
             # print('import sucess', folder_path, items_per_page)
             #  validate pickle data
-            if folder_path != "" and 3<items_per_page<51:
-                print('settings pickle win')
+        else: #no pickle...gotta make one
+            sampleDiretory = "sampleImages"
+            # get originating directory...so I can get the sample images folder
+            if getattr(sys, 'frozen', False): # If  run as a PyInstaller bootloader
+                application_path = sys._MEIPASS
             else:
-                print('settings pickle fail') 
-                pageError = QMessageBox(self)
-                pageError.setWindowTitle('Back...in black.')
-                pageError.setText("Sorry, sorry...sorry\nSettings failed. "
-                                  "Returning to default directory and page size.")
-                pageError.show()
-                # get originating directory...so I can get the sample images folder
-                script_directory = os.path.dirname(os.path.abspath(sys.argv[0]))
-                sampleDiretory = "sampleImages"
-                folder_path = os.path.join(script_directory,sampleDiretory).replace('\\','/')
-                # folder_path = QFileDialog.getExistingDirectory(self, "Select a directory")
-                # i should put this default value somewhere more intelligent.
-                items_per_page = 10   # DEFAULT VALUE
-                # put settings into dictionary
-                settings = {'folder_path' : folder_path, 'items_per_page' : items_per_page,}
-                # Try and make a pickle at conf.pickle
-                with open ('conf.pickle','wb') as p:
-                    pickle.dump(settings,p)
+                application_path = os.path.dirname(os.path.abspath(__file__))
+            folder_path = os.path.join(application_path,sampleDiretory).replace('\\','/')
+            items_per_page = 10   # DEFAULT VALUE
+        if folder_path != "" and 3<items_per_page<51:
+            print('settings pickle win')
+        else:
+            print('settings pickle fail') 
+            pageError = QMessageBox(self)
+            pageError.setWindowTitle('Back...in black.')
+            pageError.setText("Sorry, sorry...sorry\nSettings failed. "
+                                "Returning to default directory and page size.")
+            pageError.show()
+            folder_path = "sampleImages"
+            # i should put this default value somewhere more intelligent.
+            items_per_page = 10   # DEFAULT VALUE
+            # put settings into dictionary
+            settings = {'folder_path' : folder_path, 'items_per_page' : items_per_page,}
+            # Try and make a pickle at conf.pickle
+            with open ('conf.pickle','wb') as p:
+                pickle.dump(settings,p)
         return folder_path, items_per_page
 
     def display_files(self):  # setup and add file buttons and navigation buttons
@@ -470,7 +485,12 @@ class settingsWindow(QWidget):
     def __init__(self, parent_window):
         super().__init__()
 
-        self.setWindowIcon(QIcon('icons/oscarAngry.ico'))
+        if getattr(sys, 'frozen', False): # If  run as a PyInstaller bootloader
+            application_path = sys._MEIPASS
+        else:
+            application_path = os.path.dirname(os.path.abspath(__file__))
+        iconPath = os.path.join(application_path,"icons","oscarAngry.ico")
+        self.setWindowIcon(QIcon(iconPath))
         self.setWindowTitle("Settings window")
 
         self.pw = parent_window

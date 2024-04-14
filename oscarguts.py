@@ -4,7 +4,7 @@ import numpy as np
 from pprint import pprint as pp
 import datetime
 import cv2
-import os
+import os, sys
 import gspread
 import pickle
 
@@ -172,7 +172,14 @@ def findTheHeroName(leFilePath,templatesType="A"):  # Templates = A or U or G  U
         "a":cv2.inRange(hsvImage,(5  , 200, 200),(15,  230, 230)),  # amber colors extracted
         "w":cv2.inRange(hsvImage,(0  ,   0, 205),(180,  50, 255)),  # white colors extracted
         "r":cv2.inRange(hsvImage,(155, 160, 180),(180, 255, 255))}  # red colors extracted
-    templates = [[x[:-4], cv2.imread(os.path.abspath(os.path.join("templates",x)), cv2.IMREAD_GRAYSCALE)] for x in os.listdir("templates") if x[-7:-6] == templatesType]
+
+    if getattr(sys, 'frozen', False): # If  run as a PyInstaller bootloader
+        application_path = sys._MEIPASS
+    else:
+        application_path = os.path.dirname(os.path.abspath(__file__))
+    templateDirectory = os.path.join(application_path,"templates")
+    fullDirectoryList = os.listdir(templateDirectory)
+    templates = [[x[:-4], cv2.imread(os.path.join(templateDirectory,x), cv2.IMREAD_GRAYSCALE)] for x in fullDirectoryList if x[-7:-6] == templatesType]
     for template in templates:
         if w == 2560:
             # print("no scale necessary")
