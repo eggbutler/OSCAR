@@ -1,8 +1,8 @@
 import sys, os, pickle
 from PyQt6.QtWidgets import QApplication, QMainWindow, QFileDialog, QPushButton, QHBoxLayout, QVBoxLayout, \
         QWidget, QInputDialog, QLabel, QLineEdit, QMessageBox, QGridLayout
-from PyQt6.QtGui import QIcon, QAction, QIntValidator
-from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QIcon, QAction, QIntValidator, QPixmap
+from PyQt6.QtCore import Qt 
 from PIL import Image
 # import pytesseract
 # import numpy as np
@@ -335,12 +335,16 @@ class FileButtonApp(QMainWindow):
 
     def updateFolder (self):  # update monitored folder setting menu
         print("updating path")
-        folder_path = QFileDialog.getExistingDirectory(self, "Select a directory",self.fls.path)
+        #monitored folder
+        folder_path = QFileDialog.getExistingDirectory(self, "Select a directory",self.fls.path) 
+
+        picklePath = os.path.join(self.application_path,"conf.pickle")
+
         if folder_path != "":
             # put settings into dictionary
             settings = {'folder_path' : folder_path, 'items_per_page' : self.fls.pageSize,}
             # update pickle to conf.pickle
-            with open ('conf.pickle','wb') as p: pickle.dump(settings,p)
+            with open (picklePath,'wb') as p: pickle.dump(settings,p)
             # update main window
             self.fls.path = folder_path
             self.fls.updateStatus()
@@ -356,12 +360,13 @@ class FileButtonApp(QMainWindow):
         print('updating page size')
         # Display an input dialog
         text, ok = QInputDialog.getText(self, "Enter Text", "Please enter a number (4-50):", text=str(self.fls.pageSize))
+        picklePath = os.path.join(self.application_path,"conf.pickle")
         if ok and text:
             try:
                 if 3 < int(text) < 50:
                     self.fls.pageSize = int(text)
                     settings = {'folder_path' : self.fls.path, 'items_per_page' : self.fls.pageSize,}
-                    with open ('conf.pickle','wb') as p: 
+                    with open (picklePath,'wb') as p: 
                         pickle.dump(settings,p)
                     self.fls.pageIndex = 0
                     self.fls.updateStatus()
@@ -386,15 +391,19 @@ class FileButtonApp(QMainWindow):
                                          "GLHF! ~~EggButler")
         self.aboutWin.setDetailedText("Did somebody say peanut butter?")  #Always plain
         self.aboutWin.setStandardButtons(QMessageBox.StandardButton.Ok)
+        leIcon = QIcon(QPixmap(os.path.join(self.application_path,'icons','oscarAngrySmall.png')))
+        self.aboutWin.setWindowIcon(leIcon)
         self.aboutWin.exec()
 
     def initializeSettings(self):  # load config pickle to get folder path and page size
-        # Get the directory path using QFileDialog
-        # folder_path = QFileDialog.getExistingDirectory(self, "Select a directory")
-        if os.path.exists('conf.pickle'): 
+        # Get the directory path; first check settings pickel:
+        # get originating directory...so I can get the pickles
+        picklePath = os.path.join(self.application_path,"conf.pickle")
+
+        if os.path.exists(picklePath): 
             print('testing pickle')
             # pull settings from dictionary
-            with open ('conf.pickle', 'rb') as p:
+            with open (picklePath, 'rb') as p:
                 settings = pickle.load(p)
             folder_path = settings['folder_path']
             items_per_page = settings['items_per_page']
@@ -402,13 +411,7 @@ class FileButtonApp(QMainWindow):
             # print('import sucess', folder_path, items_per_page)
             #  validate pickle data
         else: #no pickle...gotta make one
-            sampleDiretory = "sampleImages"
-            # get originating directory...so I can get the sample images folder
-            if getattr(sys, 'frozen', False): # If  run as a PyInstaller bootloader
-                application_path = sys._MEIPASS
-            else:
-                application_path = os.path.dirname(os.path.abspath(__file__))
-            folder_path = os.path.join(application_path,sampleDiretory).replace('\\','/')
+            folder_path = os.path.join(self.application_path,"sampleImages").replace('\\','/')
             items_per_page = 10   # DEFAULT VALUE
         if folder_path != "" and 3<items_per_page<51:
             print('settings pickle win')
@@ -425,7 +428,7 @@ class FileButtonApp(QMainWindow):
             # put settings into dictionary
             settings = {'folder_path' : folder_path, 'items_per_page' : items_per_page,}
             # Try and make a pickle at conf.pickle
-            with open ('conf.pickle','wb') as p:
+            with open (picklePath,'wb') as p:
                 pickle.dump(settings,p)
         return folder_path, items_per_page
 

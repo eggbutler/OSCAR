@@ -319,10 +319,17 @@ class analysisCache:
     """obect to hold the cache data coming out of Tesseract"""
     """{"filename and path':[val1, ... val6]}"""
     def __init__(self) -> None:
+        if getattr(sys, 'frozen', False): # If  run as a PyInstaller bootloader
+            application_path = sys._MEIPASS
+        else:
+            application_path = os.path.dirname(os.path.abspath(__file__))
+
+        self.picklePath = os.path.join(application_path,"dataCache.pickle")
+
         # get a pickle
-        if os.path.exists('dataCache.pickle'):
+        if os.path.exists(self.picklePath):
             print('found the cache')
-            with open ('dataCache.pickle', 'rb') as p:
+            with open (self.picklePath, 'rb') as p:
                 self.dC = pickle.load(p)
         else:
             print('no data cache found; starting a new one')
@@ -330,7 +337,7 @@ class analysisCache:
             # return self.datacache
 
     def backupCache(self):
-        with open ('dataCache.pickle','wb') as p: 
+        with open (self.picklePath,'wb') as p: 
             pickle.dump(self.dC,p)
 
 
