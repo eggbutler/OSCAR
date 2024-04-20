@@ -28,13 +28,13 @@ def paginateList(listofdata, itemsQTY=5):  # take a list and cut it up into list
     return fileList
 
 class oscarImage():
-    """take a file path and offer a read it...or what have you"""
+    """take a file path and read it...options for saving snippets"""
     def __init__(self, filePath) -> None:
         self.leP = filePath
-        if os.path.exists(filePath):
-            print("heyoooooooo lets goooo")
-        else:
-            print('nope no filePath')
+        # if os.path.exists(filePath):
+        #     print("heyoooooooo lets goooo")
+        # else:
+        #     print('nope no filePath')
         if getattr(sys, 'frozen', False): # If  run as a PyInstaller bootloader
             self.application_path = sys._MEIPASS
         else:
@@ -271,14 +271,6 @@ class oscarFileMeta():
         self.name = self.nameList[self.index]
         self.namePath = self.pathList[self.index]
         self.status = self.statusList[self.index]
-
-    # def updateFileIndex(self,leFileIndex):
-    #     self.fileIndex = leFileIndex
-    #     self.updateData()
-
-    # def updatePageIndex(self,lePageIndex):
-    #     self.pageIndex = lePageIndex
-    #     self.updateStatus()
 
     def dumpData(self):
         print('self.name:')
