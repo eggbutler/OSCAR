@@ -5,7 +5,7 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[("scrap_client_secret.json",".")],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

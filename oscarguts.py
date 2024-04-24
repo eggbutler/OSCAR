@@ -5,7 +5,7 @@ from pprint import pprint as pp
 import datetime
 import cv2
 import os, sys
-import gspread
+import gspread, json
 import pickle
 
 
@@ -196,7 +196,18 @@ class oscarImage():
 class oscarWorksheet():
     """interact with the worksheet"""
     def __init__(self) -> None:
-        self.gc = gspread.service_account()
+        # self.gc = gspread.service_account()
+        if getattr(sys, 'frozen', False): # If  run as a PyInstaller bootloader
+            application_path = sys._MEIPASS
+        else:
+            application_path = os.path.dirname(os.path.abspath(__file__))
+        credPath = os.path.join(application_path, 'scrap_client_secret.json')
+        with open(credPath,"r") as c:
+            # creds = c.read()
+            creds = json.loads(c.read())
+        with open("sheets.googleapis.com-python.json") as a:
+            authUser = json.loads(a.read())
+        self.gc, authorizedUser = gspread.oauth_from_dict(creds, authUser)
         self.wks = self.gc.open('VAXTA').worksheet('DATA(leave)')
 
     def getStatus(self):  # return a list of done and ignored files from the sheet

@@ -14,65 +14,178 @@ import pygsheets.exceptions
 import sys, pygsheets, os, pygsheets.worksheet
 from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel
 from oscargui import FileButtonApp
-import pickle
+import datetime, json, gspread
+# from scrap_client_secret import clientSecret
+# from askVAXTA import askVAXTA
+from sys import exit
 
 
 def initializeGoogleSheets():
-    if not os.path.exists("sheets.googleapis.com-python.json"):  #spreadsheet cred
+    if getattr(sys, 'frozen', False): # If  run as a PyInstaller bootloader
+        application_path = sys._MEIPASS
+    else:
+        application_path = os.path.dirname(os.path.abspath(__file__))
+    vaxPath = os.path.join(application_path, 'vaxta.status')
+    try:
+        with open(vaxPath,'r') as v:
+            vResponse = v.read()
+    except FileNotFoundError:
+    # except Exception as err:
+        vResponse = "blank"
+        # print(err)
+    secretPath = "sheets.googleapis.com-python.json"
+    if not os.path.exists(secretPath):  #spreadsheet cred
         initializeAuth()  #  If we don't have creds go get them
-    elif not os.path.exists("vaxta.init"): #spreadsheet was never setup
+    elif vResponse != 'vaxta done':
         initializeVAXTA()
-
-
 
 def initializeAuth():
     print("*"*100)
     print("New setup detected!\n\nLet's setup the connection to Google.")
-    while not os.path.exists("sheets.googleapis.com-python.json"):
-        print("*"*100)
-        # print("Copy and paste the URL below into a browser to continue authorization.")
-        subprocess.Popen(["start","python","pygAuth.py"], shell = True)
-        # try:
-        #     gc = pygsheets.authorize(client_secret="scrap_client_secret.json")
-        # except Exception as error:
-        #     # handle the exception
-        #     print("An exception occurred:", error)
-    test = input("Hey! It looks we logged in!\nPress Enter and restart the app to use your new credentials.")
+    count = 0
+    if getattr(sys, 'frozen', False): # If  run as a PyInstaller bootloader
+        application_path = sys._MEIPASS
+    else:
+        application_path = os.path.dirname(os.path.abspath(__file__))
+    # secretPath = os.path.join(application_path, "sheets.googleapis.com-python.json")
+    secretPath = "sheets.googleapis.com-python.json"
+    thisDir = os.getcwd()
+    print(f'{thisDir=}')
+    while not os.path.exists(secretPath):
+    # if not os.path.exists("sheets.googleapis.com-python.json"):
+        print("*"*50)
+        print('next line')
+        # print(clientSecretJson)
+        appCredPath = os.path.join(application_path,"scrap_client_secret.json")
+        try:
+            gc = pygsheets.authorize(client_secret=appCredPath)
+            # gc = pygsheets.authorize(client_secret="sample_client_secret.json")
+        except Exception as error:
+            # handle the exception
+            print("An exception occurred:", error)
+        #  safety counter b/c i'm a hack
+        count +=1
+        if count == 10:
+            print('error will robinson')
+            with open(secretPath, "w") as f:
+                f.write("oops.  emergency cancel.")
+            exit(1)
+        #  safety counter b/c i'm a hack
+    test = input("Hey! We logged in!\nPress Enter and restart the app to use your new credentials.")
+    exit(0)
+
+class VAXTASpreadSheet():
+    def __init__(self) -> None:
+        # if getattr(sys, 'frozen', False): # If  run as a PyInstaller bootloader
+        #     application_path = sys._MEIPASS
+        # else:
+        #     application_path = os.path.dirname(os.path.abspath(__file__))
+        # self.tokenPath  = os.path.join(application_path , "sheets.googleapis.com-python.json")
+        self.tokenPath  = "sheets.googleapis.com-python.json"
+        self.gc = pygsheets.authorize(self.tokenPath)
+
+    def checkVAXTA(self):  # does the sheet exist?
+        try:
+            self.gc.open("VAXTA")
+            return True
+        except pygsheets.exceptions.SpreadsheetNotFound:
+            return False
+        
+    def checkDataSheet(self):  # Does the data worksheet exist?
+        spreadSh = self.gc.open('VAXTA')
+        try:
+            spreadSh.worksheet(property="title",value="DATA(leave)")
+            return True
+        except pygsheets.exceptions.WorksheetNotFound:
+            return False
+        
+    def existingSpreadsheetFeedback(self):  # get user feed back on what to do with the existing "vaxta" file
+        askApp = QApplication([])
+        askWindow = askVAXTA()
+        askWindow.show()
+        askApp.exec()
+        return askWindow.response
+
+    def makeNewSpreadSheet(self):
+        self.gc.create("VAXTA")
+
+    def makeNewDataSheet(self):
+        spreadSh = self.gc.open("VAXTA")
+        dataSheet = spreadSh.add_worksheet("DATA(leave)",rows=2,cols=10,index=0)
+        # create the header row with the headList
+        headList = ["FILENAME", "DATETIME", "HERO", "TIMER", "KILLS", 
+                    "KPM", "ACCURACY", "CRIT ACCURACY", 
+                    "COMMENT", "STATUS"]
+        for idx, label in enumerate(headList):
+            pygsheets.Cell((1,idx+1)).link(dataSheet).set_value(label)
+        #freeze top row
+        dataSheet.frozen_rows = 1
+        return dataSheet
+
+    def archiveExistingDataWorksheet(self):  # copy the existing data sheet to another spot
+        existingSpreadsheet = self.gc.open("VAXTA")
+        rightMeow = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M")
+        newTitle = f"DATA(leave)-{rightMeow}"
+        # jsonProp = {"properties": {"title": "DATA(leave)"}}
+        workSh = existingSpreadsheet.worksheet_by_title('DATA(leave)')
+        # copy data sheet to the last index in the spreadsheet
+        existingSpreadsheet.add_worksheet(newTitle,src_tuple=(existingSpreadsheet.id, workSh.id),src_worksheet=workSh,index=-1)
+        existingSpreadsheet.del_worksheet(workSh)
+        # workSh = pygsheets.Worksheet(existingSpreadsheet,jsonProp)
+        # workSh.title = f"DATA(leave)-{rightMeow}"
+
+    def getStatus(self):  # return a list of done and ignored files from the sheet
+        spreadSheet = self.gc.open("VAXTA")
+        dataSheet = spreadSheet.worksheet_by_title("DATA(leave)")
+        status = dataSheet.get_values_batch([f"A2:A{dataSheet.rows}",f"J2:J{dataSheet.rows}"])
+        ignoreList = []
+        recordList = []
+        for row in range(len(status[0])):
+            print(status[1][row][0])
+            print (status[0][row][0])
+            print("#"*10)
+            if status[1][row][0] == "ignored":
+                ignoreList.append(status[0][row][0])
+            else:
+                recordList.append(status[0][row][0])
+                
+    def writeTest(self):  # write todays date and time to the sheet
+        spreadSheet = self.gc.open("VAXTA")
+        dataSheet = spreadSheet.worksheet("DATA(leave)")
+        stringNow = datetime.datetime.now().strftime(f'%Y-%m-%d %H:%M')
+        addRow = [f'fake{stringNow}.png',stringNow] + [None]*7 + ['ignored']
+        dataSheet.append_row(addRow)
 
 def initializeVAXTA():
-    askApp = QApplication([])
-    window = askVAXTA()
-    # print("*"*100)
-    # test = input("Hey! It looks we logged in!\nPress Enter to start creating a spreadsheet")
-    gc = pygsheets.authorize("sheets.googleapis.com-python.json")
-    try:
-        # no error means something already exists there
-        gc.open("VAXTA")  # oh nooooooo this sheet shouldn't exist...we must investigate
-        # ask user what to do about the existing file
-        # stat = subprocess.Popen(["start","python","askVAXTA.py"], shell = True)
-        # userResponse = askVAXTA()
-        window.show()
-        askApp.exec()
-    except pygsheets.exceptions.SpreadsheetNotFound:
-        #sweeet, that means we're clear to create a new clean sheet
-        gc.create("VAXTA")
-        # gc. setup VAXTA
-    with open('vaxta.init','w') as v:
-        pickle.dump("vaxta started",v)
-        # this marks that vaxta was setup sucessfully
-    print("oh no")
-    pass
-
-
-######################################################work on this
-def setupVAXTA():
-    # add sheets and add other stuff
-    print('adding stuff')
-
-def getUserVaxta():  # ask user what to do about the existing VAXTA file
-    indecisive = True
-    while indecisive:
-        resp = input("I found a sheet named VAXTA already.  ")
+    vaxSpr = VAXTASpreadSheet()  # VAXTA Spreadsheet
+    if vaxSpr.checkVAXTA():  # spreadsheet named vaxta already exists
+        print("existing vaxta found")
+        userResponse = vaxSpr.existingSpreadsheetFeedback()
+        print("userResponse")
+        print(userResponse)
+        if userResponse == "add":
+            #archive existing and create new worksheet
+            if vaxSpr.checkDataSheet(): #data sheet exists:
+                vaxSpr.archiveExistingDataWorksheet()
+                vaxSpr.makeNewSpreadSheet()
+                vaxSpr.makeNewDataSheet
+        elif userResponse == "asis":
+            #  trust but verify
+            if not vaxSpr.checkDataSheet():  # data sheet missing, so we'll add it
+                print("this shouldn't print")
+                vaxSpr.makeNewSpreadSheet()
+                vaxSpr.makeNewDataSheet()
+    else:  # spreadsheet does not exist
+        vaxSpr.makeNewSpreadSheet()
+        vaxSpr.makeNewDataSheet()
+    if getattr(sys, 'frozen', False): # If  run as a PyInstaller bootloader
+        application_path = sys._MEIPASS
+    else:
+        application_path = os.path.dirname(os.path.abspath(__file__))
+    vaxPath = os.path.join(application_path, 'vaxta.status')
+    with open(vaxPath,'w') as s:
+        s.write("vaxta done")
+    print('vaxta done!')
 
 class askVAXTA(QWidget):
     def __init__(self):
@@ -88,29 +201,39 @@ class askVAXTA(QWidget):
         self.layout.addWidget(self.label)
 
         self.button1 = QPushButton("The file is all ready to go.")
-        self.button1.addAction(self.useFileAsIs())
+        self.button1.clicked.connect(lambda: self.useFileAsIs())
         self.layout.addWidget(self.button1)
 
-        self.button2 = QPushButton("Use the existing file and\nadd default sheets to it.")
-        self.button2.addAction(self.addSheetsToWorkbook())
+        self.button2 = QPushButton("Use the existing file and\nadd new default sheets to it.")
+        self.button2.clicked.connect(lambda: self.addSheetsToWorkbook())
         self.layout.addWidget(self.button2)
 
         self.button3 = QPushButton("Cancel and manually change\nthe sheet to another name")
-        self.button3.addAction(self.cancelMe())
+        self.button3.clicked.connect(lambda: self.cancelMe())
         self.layout.addWidget(self.button3)
-
+        if getattr(sys, 'frozen', False): # If  run as a PyInstaller bootloader
+            application_path = sys._MEIPASS
+        else:
+            application_path = os.path.dirname(os.path.abspath(__file__))
+        self.vaxPath = os.path.join(application_path, 'vaxta.status')
+        
     def useFileAsIs(self):
+        with open(self.vaxPath,'w') as v:
+            v.write("vaxta asis")
         self.response = "asis"
+        self.close()
 
     def addSheetsToWorkbook(self):
+        with open(self.vaxPath,'w') as v:
+            v.write("vaxta add sheets")
         self.response = 'add'
+        self.close()
 
     def cancelMe(self):
-        quit()
+        exit(0)
 
     def getAnswer(self):
         return self.response
-
 
 if __name__ == "__main__":
     initializeGoogleSheets()
@@ -119,42 +242,3 @@ if __name__ == "__main__":
     window.show()
     app.exec()
     # sys.exit(app.exec())
-
-gc = pygsheets.authorize(client_secret="scrap_client_secret.json")
-
-os.getcwd()
-gc = pygsheets.authorize("sheets.googleapis.com-python.json")
-x = gc.open("VAXTA")
-x
-
-import subprocess
-
-import subprocess, os
-os.getcwd()
-result = subprocess.run(["python", "pygAuth.py"], capture_output=True, text=True, shell=True)
-print(result.stdout)
-
-
-p = subprocess.Popen(["start","cmd", "/k", "echo hello"], shell = True)
-p = subprocess.Popen(["start","cmd", "/k", "echo hello"], shell = True)
-
-
-
-
-p = subprocess.Popen(["start","python","pygAuth.py"], shell = True)
-
-
-
-p = subprocess.Popen(["python","pygAuth.py"])
-p = subprocess.Popen(["python","--help"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell = True)
-p = subprocess.Popen(["python","pygAuth.py"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell = True)
-p = subprocess.Popen(["python","pygAuth.py"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell = True)
-output, errors = p.communicate()
-
-print(output)
-
-os.getcwd()
-
-
-p.stdout("test")
-p.stdin("test")

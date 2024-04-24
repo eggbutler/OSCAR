@@ -153,8 +153,15 @@ cython_debug/
 
 # DDC stuff for OSCAR
 debug/*
+# debug folder...but none of the contents
 !debug/.gitkeep
-scrap*
-conf.pickle
 .vscode/
+scrap*
+#config pickle
+conf.pickle
+#OCR / hero pickle
 dataCache.pickle
+#initialization of spreadsheet status
+vaxta.status
+#local user password-token-oauth thingy
+sheets.googleapis.com-python.json
