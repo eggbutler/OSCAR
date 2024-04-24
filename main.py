@@ -94,7 +94,8 @@ class VAXTASpreadSheet():
     def checkDataSheet(self):  # Does the data worksheet exist?
         spreadSh = self.gc.open('VAXTA')
         try:
-            spreadSh.worksheet(property="title",value="DATA(leave)")
+            spreadSh.worksheet_by_title('DATA(leave)')
+            # spreadSh.worksheet(property="title",value="DATA(leave)")
             return True
         except pygsheets.exceptions.WorksheetNotFound:
             return False
@@ -120,7 +121,7 @@ class VAXTASpreadSheet():
             pygsheets.Cell((1,idx+1)).link(dataSheet).set_value(label)
         #freeze top row
         dataSheet.frozen_rows = 1
-        return dataSheet
+        # return dataSheet
 
     def archiveExistingDataWorksheet(self):  # copy the existing data sheet to another spot
         existingSpreadsheet = self.gc.open("VAXTA")
@@ -167,13 +168,14 @@ def initializeVAXTA():
             #archive existing and create new worksheet
             if vaxSpr.checkDataSheet(): #data sheet exists:
                 vaxSpr.archiveExistingDataWorksheet()
-                vaxSpr.makeNewSpreadSheet()
-                vaxSpr.makeNewDataSheet
+                # vaxSpr.makeNewSpreadSheet()
+                vaxSpr.makeNewDataSheet()
+            else: # data work sheet doesn't exist
+                vaxSpr.makeNewDataSheet()
         elif userResponse == "asis":
             #  trust but verify
             if not vaxSpr.checkDataSheet():  # data sheet missing, so we'll add it
                 print("this shouldn't print")
-                vaxSpr.makeNewSpreadSheet()
                 vaxSpr.makeNewDataSheet()
     else:  # spreadsheet does not exist
         vaxSpr.makeNewSpreadSheet()
@@ -183,9 +185,13 @@ def initializeVAXTA():
     else:
         application_path = os.path.dirname(os.path.abspath(__file__))
     vaxPath = os.path.join(application_path, 'vaxta.status')
-    with open(vaxPath,'w') as s:
-        s.write("vaxta done")
-    print('vaxta done!')
+    if vaxSpr.checkVAXTA() and vaxSpr.checkDataSheet():
+        # worksheet and data sheet are there!!!
+        with open(vaxPath,'w') as s:
+            s.write("vaxta done")
+        print('vaxta done!')
+    else:
+        print('general vaxta failure')
 
 class askVAXTA(QWidget):
     def __init__(self):
@@ -242,3 +248,4 @@ if __name__ == "__main__":
     window.show()
     app.exec()
     # sys.exit(app.exec())
+

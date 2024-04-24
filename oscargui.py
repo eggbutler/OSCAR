@@ -69,7 +69,7 @@ class reviewData(QWidget):
         act_layout = QHBoxLayout()
 
         # Create send button
-        sendButton = QPushButton("Send")
+        sendButton = QPushButton("Record")
         sendButton.clicked.connect(self.sendData)
         act_layout.addWidget(sendButton)
 
