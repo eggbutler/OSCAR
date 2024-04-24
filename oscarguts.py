@@ -385,3 +385,6 @@ if __name__ == '__main__':
     # scoretest = oscarImage(left).ripScoreboard(saveRGB=True, saveColorExtracts=True)
     
     # ripTest = oscarImage(left).ripVAXTA()
+
+    # zen = "C:/Users/dim/Dropbox/projects/Overwatch Scrape/sample screenshots/allheros/Overwatch 4_9_2024 6_46_14 PM Zenyatta.png"
+    # zenTest = oscarImage(zen).ripScoreboard(saveColorExtracts=True,saveRGB=True)
